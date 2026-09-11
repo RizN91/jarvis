@@ -24,6 +24,91 @@ No subscription. Bring your own OpenAI key. **From $0.0045 per minute.**
 
 ---
 
+## Install
+
+**Windows 10 or 11.** One line in PowerShell is the whole install:
+
+```powershell
+irm https://raw.githubusercontent.com/RizN91/jarvis/main/install.ps1 | iex
+```
+
+It finds your Python, clones Jarvis into `%LOCALAPPDATA%\Jarvis\app`, builds the
+virtual environment, installs the pinned dependencies, runs a smoke check, and
+adds a Start Menu shortcut.
+
+It is per-user and reversible: it never elevates, never installs Python for you,
+and never changes your execution policy, your Defender settings or your global
+Python. `-DryRun` prints exactly what it would do and changes nothing;
+`-Uninstall` removes it again, and will not touch your data folder without a
+typed confirmation.
+
+The first launch opens a setup wizard — microphone, speakers, shortcuts, wake
+word and budget — and asks for your OpenAI API key, which goes straight into
+**Windows Credential Manager** and never into a file.
+
+Nothing is sent anywhere until you finish the wizard and start dictating, apart
+from the connection tests you explicitly choose to run.
+
+<details>
+<summary>Or install by hand</summary>
+
+```bat
+git clone https://github.com/RizN91/jarvis.git
+cd jarvis
+setup.cmd
+run.cmd
+```
+
+Or straight from the source tree:
+
+```bat
+py -3.11 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m jarvis
+```
+
+macOS and Linux are not supported yet. `install.sh` says so rather than
+pretending, and [Platform support](#platform-support) explains why.
+
+</details>
+
+## Two ways to start it
+
+You never have to click anything.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Say “Hey Jarvis”**
+
+Turn the wake word on and just start talking. It is detected **on your machine**
+by a small local model, so while it is listening for the phrase **no audio leaves
+your computer at all**. “Hey GPT” works too, and you can set your own phrase.
+
+</td>
+<td width="50%" valign="top">
+
+**Or hold a button**
+
+The default is your mouse's **side button** (XButton2): hold it, speak, release —
+the words are already at your cursor. Prefer the keyboard? Tap **F8**.
+
+</td>
+</tr>
+</table>
+
+| You press | What happens |
+| --- | --- |
+| Mouse **side button** (hold) | Dictate into whichever app has focus |
+| `F8` | Start and stop dictation, hands-free |
+| `Ctrl` + `Alt` + `Space` | Open a voice conversation |
+| `Ctrl` + `Alt` + `Pause` | Emergency stop — ends the session and any running tool |
+| `Esc` | Cancel whatever is happening right now |
+
+Every one of them is rebindable in the setup wizard — to a different key, a
+different mouse button, or nothing at all.
+
 ## Watch it work
 
 [![Jarvis — the floating pill, and real dictation landing in Notepad](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
@@ -32,7 +117,7 @@ No subscription. Bring your own OpenAI key. **From $0.0045 per minute.**
 shipped code running — the clip is generated from the app itself, so it cannot
 quietly drift from what you download.
 
-**[▶ Watch the 81-second demo with sound](docs/media/jarvis-demo.mp4)** · 1080p, 11 MB
+**[▶ Watch the 88-second demo with sound](docs/media/jarvis-demo.mp4)** · 1080p, 12 MB
 
 ---
 
@@ -92,56 +177,6 @@ before you rely on it.</sub>
 <sub>Every screen has a light theme, and the whole UI is translated — see below.</sub>
 
 </div>
-
-## Install
-
-**Windows 10 or 11.** You need Python 3.11+ and an OpenAI API key.
-
-One line in PowerShell is the whole install:
-
-```powershell
-irm https://raw.githubusercontent.com/RizN91/jarvis/main/install.ps1 | iex
-```
-
-It finds your Python, clones Jarvis into `%LOCALAPPDATA%\Jarvis\app`, builds the
-virtual environment, installs the pinned dependencies, runs a smoke check, and
-adds a Start Menu shortcut.
-
-It is a per-user install: it never elevates, never installs Python for you, and
-never changes your execution policy, your Defender settings or your global
-Python. `-DryRun` prints exactly what it would do and changes nothing;
-`-Uninstall` removes it again, and will not touch your data folder without a
-typed confirmation.
-
-**Or by hand** — the same three commands the script runs:
-
-```bat
-git clone https://github.com/RizN91/jarvis.git
-cd jarvis
-setup.cmd
-```
-
-`setup.cmd` finds a suitable Python, creates a virtual environment, installs the
-pinned dependencies, and runs a smoke check. Then:
-
-```bat
-run.cmd
-```
-
-The first launch opens the setup wizard. It walks you through your microphone,
-speakers, shortcuts, wake word and budget, and asks for your API key — which is
-stored in **Windows Credential Manager**, never in a file.
-
-Nothing is sent anywhere until you finish the wizard and start dictating, apart
-from the connection tests you explicitly choose to run.
-
-Prefer to do it by hand?
-
-```bat
-py -3.11 -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-.venv\Scripts\python.exe -m jarvis
-```
 
 ## What it costs
 

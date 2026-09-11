@@ -15,6 +15,7 @@ import { Dictation } from "./scenes/Dictation";
 import { Gallery } from "./scenes/Gallery";
 import { Hook } from "./scenes/Hook";
 import { Preview } from "./scenes/Preview";
+import { Start } from "./scenes/Start";
 import { Trust } from "./scenes/Trust";
 import { SCENES, TOTAL_FRAMES, at } from "./timing";
 
@@ -61,6 +62,7 @@ const Cue: React.FC<{ from: number; file: string; volume?: number; dur?: number 
 
 export const JarvisDemo: React.FC = () => {
   const boundaries = [
+    SCENES.start.from,
     SCENES.dictation.from,
     SCENES.assistant.from,
     SCENES.gallery.from,
@@ -74,6 +76,9 @@ export const JarvisDemo: React.FC = () => {
       {/* ---- picture ---- */}
       <Scene from={SCENES.hook.from} duration={SCENES.hook.dur}>
         <Hook />
+      </Scene>
+      <Scene from={SCENES.start.from} duration={SCENES.start.dur}>
+        <Start />
       </Scene>
       <Scene from={SCENES.dictation.from} duration={SCENES.dictation.dur}>
         <Dictation />
@@ -116,6 +121,7 @@ export const JarvisDemo: React.FC = () => {
 
       {/* ---- a thin punctuation layer ---- */}
       <Cue from={at("hook", 1.7)} file="pop.mp3" volume={0.45} dur={12} />
+      <Cue from={at("start", 3.6)} file="pop.mp3" volume={0.4} dur={12} />
       <Cue from={at("assistant", 2.0)} file="pop.mp3" volume={0.35} dur={12} />
       <Cue from={at("assistant", 5.2)} file="pop.mp3" volume={0.35} dur={12} />
       <Cue from={at("assistant", 8.4)} file="pop.mp3" volume={0.35} dur={12} />

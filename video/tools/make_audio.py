@@ -27,7 +27,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 BPM = 82.0
 BEAT = 60.0 / BPM          # 0.7317 s
 BAR = 4 * BEAT             # 2.9268 s
-BARS = 28                  # ~82 s of music
+BARS = 30                  # ~88 s of music, to cover the 88 s cut
 TOTAL = BAR * BARS + 2.0
 
 # ---------------------------------------------------------------- helpers

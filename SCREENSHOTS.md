@@ -4,7 +4,7 @@
 
 [![Jarvis — the floating pill, and real dictation landing in Notepad](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
 
-**[▶ Watch the 81-second demo with sound](docs/media/jarvis-demo.mp4)** — 1080p, 11 MB.
+**[▶ Watch the 88-second demo with sound](docs/media/jarvis-demo.mp4)** — 1080p, 12 MB.
 
 It is assembled from captures of the real application rather than drawn by hand:
 the pill is rendered by `jarvis/win/overlay.py`, and the dictation footage is a

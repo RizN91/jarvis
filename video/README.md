@@ -41,7 +41,7 @@ desktop you are willing to have briefly disturbed, with nothing else typing.
 
 ## Where the music comes from
 
-`tools/make_audio.py` synthesises an 84-second lofi bed — electric piano, bass,
+`tools/make_audio.py` synthesises a 90-second lofi bed — electric piano, bass,
 brushed drums, vinyl crackle and tape hiss — plus four sound effects. It is
 mixed deliberately quiet (about −21 LUFS) because it sits under the visuals
 rather than in front of them. The tonal tilt is worth knowing about if you edit
