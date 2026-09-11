@@ -98,7 +98,7 @@ Todos eles podem ser reatribuídos no assistente de configuração — para outr
 
 ## Veja funcionando
 
-<video src="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4" poster="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-preview.webp" controls preload="metadata" width="100%"></video>
+[![Jarvis demo](docs/media/jarvis-preview.webp)](https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4)
 
 **[▶ Assista à demonstração de 88 segundos com som](https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4)** · 1080p, 12 MB
 

@@ -98,7 +98,7 @@ macOS と Linux はまだ対応していません。`install.sh` はごまかさ
 
 ## 動作を確認する
 
-<video src="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4" poster="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-preview.webp" controls preload="metadata" width="100%"></video>
+[![Jarvis demo](docs/media/jarvis-preview.webp)](https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4)
 
 **[▶ 音声つき 88 秒のデモを見る](https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4)** · 1080p, 12 MB
 
