@@ -14,6 +14,7 @@ Run:  python tests/test_regressions.py
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import sys
@@ -970,6 +971,92 @@ def test_resolving_a_saved_device_name():
     check(capture.resolve_device(truncated) == first.index,
           "a 31-character MME-truncated name still resolves",
           f"{truncated!r} -> {capture.resolve_device(truncated)}")
+
+
+# ==========================================================================
+# 14. The two-way voice loop
+#
+# WAS: nothing exercised the assistant conversation at all. The dictation suites
+# stream audio IN and check the transcript; none of them ever asked the model to
+# talk, and in a real install the assistant had literally never opened (the log
+# had zero assistant sessions). The loop is: output_audio.delta -> on_audio ->
+# speaker.play, and it is only wired when config.dictation is False - so a
+# regression there is silent, and the user simply hears nothing.
+# ==========================================================================
+
+def test_the_assistant_forwards_spoken_audio():
+    """output_audio.delta must reach on_audio for a conversation session."""
+    from jarvis.engines import live
+    src = (_PROJECT_ROOT / "jarvis" / "engines" / "live.py").read_text(
+        encoding="utf-8", errors="replace")
+    check("session.output_audio.delta" in src,
+          "the engine handles the model's audio events")
+    check("if self.on_audio and not self.config.dictation:" in src,
+          "and forwards them ONLY for a conversation, never for dictation",
+          "dictation must not play the model's voice back into the room")
+
+    # The callbacks really are invoked.
+    got: list[bytes] = []
+    sess = live.LiveSession(live.LiveConfig(dictation=False),
+                            on_audio=lambda pcm: got.append(pcm))
+    import base64
+    sess._handle({"type": "session.output_audio.delta",
+                  "delta": base64.b64encode(b"\x01\x02" * 50).decode()})
+    check(len(got) == 1 and got[0] == b"\x01\x02" * 50,
+          "a delta event decodes to PCM and reaches the callback",
+          f"{len(got)} callbacks")
+
+    quiet: list[bytes] = []
+    dict_sess = live.LiveSession(live.LiveConfig(dictation=True),
+                                 on_audio=lambda pcm: quiet.append(pcm))
+    dict_sess._handle({"type": "session.output_audio.delta",
+                       "delta": base64.b64encode(b"\x03" * 10).decode()})
+    check(not quiet, "a DICTATION session does not play audio back")
+
+
+def test_the_session_can_ask_the_model_to_speak():
+    """response.create is the documented command; without it the model is mute."""
+    from jarvis.engines import live
+    check(hasattr(live.LiveSession, "create_response"),
+          "LiveSession.create_response exists")
+
+    sent: list[dict] = []
+
+    async def fake_send(payload):
+        sent.append(payload)
+
+    sess = live.LiveSession(live.LiveConfig(dictation=False))
+    sess._send = fake_send                       # type: ignore[assignment]
+    asyncio.run(sess.create_response(event_id="speak_1"))
+    check(len(sent) == 1 and sent[0].get("type") == "response.create",
+          "it sends the documented response.create command", f"{sent}")
+    check(sent[0].get("event_id") == "speak_1", "carrying an event_id")
+
+    # The delegation shape the API accepts. A flat {"model": ...} is rejected
+    # with "Missing required parameter: 'session.delegation.responses'" - it was
+    # verified against the live API, not inferred.
+    src = (_PROJECT_ROOT / "jarvis" / "app.py").read_text(encoding="utf-8", errors="replace")
+    check('"responses": {"model":' in src,
+          "the app nests backend settings under delegation.responses")
+
+
+def test_the_speaker_device_is_resolved_not_passed_raw():
+    """The output device had the same unvalidated-name bug as the input."""
+    src = (_PROJECT_ROOT / "jarvis" / "app.py").read_text(encoding="utf-8", errors="replace")
+    check('device=self.cfg.get("output_device")' not in src,
+          "the raw output_device name is no longer handed to the Speaker")
+    check("want_input=False" in src,
+          "the speaker resolves through resolve_device(want_input=False)")
+
+    from jarvis.audio import capture
+    devices = capture.list_output_devices()
+    if devices:
+        # An output NAME must not resolve against the INPUT list, or the two
+        # would collide on a shared name like "Speakers".
+        name = devices[0].name
+        check(capture.resolve_device(name, want_input=False) == devices[0].index,
+              "an output name resolves against the output list",
+              f"{name!r}")
 
 
 # ==========================================================================

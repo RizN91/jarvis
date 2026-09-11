@@ -739,8 +739,13 @@
       '<p class="hint">' + esc(t("Lower catches quieter speech but fires more often by accident.")) + '</p></div>' +
       '<div class="row-ctl" style="display:block">' +
       slider("wake_threshold", thr, {
-        min: 0.3, max: 0.95, step: 0.01, label: t("Wake-word sensitivity threshold"),
-        leftLabel: t("More sensitive"), lowLabel: "0.30", highLabel: "0.95", rightLabel: t("Fewer false triggers"),
+        // The floor MUST include the shipped default (0.22). It used to start at
+        // 0.30, so the stored value was below the slider's range: merely opening
+        // this page and saving pushed the threshold UP, which makes the wake word
+        // LESS sensitive - the opposite of what someone debugging a wake word
+        // that never fires wants.
+        min: 0.05, max: 0.90, step: 0.01, label: t("Wake-word sensitivity threshold"),
+        leftLabel: t("More sensitive"), lowLabel: "0.05", highLabel: "0.90", rightLabel: t("Fewer false triggers"),
         display: function (v) { return v.toFixed(2); }
       }) + "</div></div>" +
       '<div class="sep"></div>' +

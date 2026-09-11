@@ -339,6 +339,19 @@ class LiveSession:
     async def update_session(self, patch: dict) -> None:
         await self._send({"type": "session.update", "session": patch})
 
+    async def create_response(self, event_id: str = "speak_1") -> None:
+        """Ask the model to produce a response — which, in a voice session, it
+        speaks.
+
+        Documented as a Live command that "creates or continues delegated
+        Responses work, using the session's configured backend", and it requires
+        Responses delegation (which the assistant configures). It is what turns
+        the session from a listener into something that talks first: without it
+        the model only ever answers audio it receives, so an empty wake word
+        produces silence.
+        """
+        await self._send({"type": "response.create", "event_id": event_id})
+
     # ------------------------------------------------------------------ read
     async def _read_loop(self) -> None:
         try:

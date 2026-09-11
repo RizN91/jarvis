@@ -675,7 +675,9 @@ class AssistantSession:
         self.cfg = app.cfg
         self.session: Optional[live.LiveSession] = None
         self.speaker = audio_playback.Speaker(rate=live.DEFAULT_RATE,
-                                             device=self.cfg.get("output_device"))
+                                             device=audio_capture.resolve_device(
+                                                 self.cfg.get("output_device"),
+                                                 want_input=False))
         self.capture: Optional[audio_capture.MicrophoneCapture] = None
         self._muted = False
         self._last_audio = 0.0
