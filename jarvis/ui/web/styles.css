@@ -84,6 +84,13 @@ body {
   font-size: var(--fs);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  /* Segoe UI Variable is an optical-size variable font on Windows 11: this makes
+     large text render with the Display design and small text with the Text
+     design, instead of one compromise for both. Ignored where unsupported. */
+  font-optical-sizing: auto;
+  /* Never let the browser fake a weight it does not have. Synthesised bold is
+     what makes Windows UI text look smeared rather than crisp. */
+  font-synthesis: none;
   overflow: hidden;
 }
 h1, h2, h3, p { margin: 0; }
@@ -91,6 +98,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; background: none; border: 0; }
 svg { display: block; }
 [hidden] { display: none !important; }
+
+/* Money, durations and usage counters: proportional digits make a column of
+   figures jitter as they change. Tabular digits hold their place. */
+.num, .numwrap, .usage, .usage-grid, .mono { font-variant-numeric: tabular-nums; }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
