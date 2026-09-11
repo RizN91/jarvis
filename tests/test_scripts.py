@@ -346,18 +346,32 @@ def check_no_unsafe_constructs():
 
 @check("all .cmd files use CRLF line endings")
 def check_crlf():
+    """Every .cmd in the repo root, discovered rather than listed.
+
+    WAS: a hardcoded CMD_SCRIPTS list of five names. Adding a new .cmd did not
+    extend that list, so a brand-new LF-only script passed this check - the
+    documented convention (.cmd must be CRLF) was not actually enforced.
+    Discovering the files means the next one is covered automatically.
+
+    Written with byte VALUES, not "\r\n" escapes: an escape sequence here was
+    once silently rewritten into a real newline by a patch, breaking the file.
+    """
+    names = sorted(p.name for p in ROOT.glob("*.cmd"))
     bad = []
-    for rel in CMD_SCRIPTS:
+    for rel in names:
         raw = (ROOT / rel).read_bytes()
-        if b"\r\n" not in raw:
+        if CRLF not in raw:
             bad.append(f"{rel} (no CRLF at all)")
             continue
-        lone = re.findall(rb"(?<!\r)\n", raw)
+        lone = [i for i, byte in enumerate(raw) if byte == LF and raw[i - 1:i] != bytes([CR])]
         if lone:
             bad.append(f"{rel} ({len(lone)} bare LF)")
     if bad:
         return False, "; ".join(bad)
-    return True, f"all 5 scripts are CRLF-only and BOM-free-ish"
+    return True, f"all {len(names)} .cmd scripts are CRLF-only"
+
+
+
 
 
 @check("the PyInstaller spec is valid, windowed, one-folder, and bundles the UI")
