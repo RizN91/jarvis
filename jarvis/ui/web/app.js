@@ -689,10 +689,46 @@
     }).join("") + "</div>";
   }
 
+  function loadWakeModel() {
+    if (S.wakeModel !== undefined || S.wakeFetching) return;
+    S.wakeFetching = true;
+    call("wake_model_status").then(function (m) {
+      S.wakeFetching = false;
+      S.wakeModel = m || { available: false, detail: "" };
+      render();
+    });
+  }
+
+  function wakeModelBlock() {
+    var m = S.wakeModel;
+    if (!m) return "";
+    if (!m.available) {
+      // The worst state this app can be in: the wake word is switched on, the
+      // phrase does nothing at all, and nothing tells you why. Say it here.
+      return '<div class="row wide" style="display:block">' +
+        '<div class="callout warn"><div class="co-body">' +
+        '<strong>' + esc(t("The wake-word model is not downloaded yet.")) + '</strong>' +
+        '<p class="hint">' + esc(t("Until it is, saying the phrase does nothing. It is about 20 MB, fetched once, and it then runs entirely on your machine \u2014 no audio leaves your PC while it listens.")) + '</p>' +
+        (S.wakeBusy ? '<p class="hint">' + esc(t("Downloading\u2026")) + '</p>' : "") +
+        '</div></div>' +
+        '<div class="inline" style="margin-top:10px">' +
+        (S.wakeBusy
+          ? '<button type="button" class="btn" disabled>' + esc(t("Downloading\u2026")) + '</button>'
+          : '<button type="button" class="btn primary" data-act="wake-download">' + icon("wake-setup") + " " + esc(t("Download the model")) + '</button>') +
+        '<span class="small muted">' + esc(t("One-time download from the sherpa-onnx releases.")) + '</span>' +
+        '</div></div>';
+    }
+    return '<div class="row wide" style="display:block">' +
+      '<div class="callout ok"><div class="co-body">' +
+      '<strong>' + esc(t("Wake-word model installed and ready.")) + '</strong>' +
+      '</div></div></div>';
+  }
+
   function wakeBlock() {
     var phrases = val("wake_phrases", []) || [];
     var thr = num(val("wake_threshold", 0.55), 0.55);
-    return toggle("wake_enabled", !!val("wake_enabled", true), t("Listen for a wake word"),
+    return wakeModelBlock() +
+      toggle("wake_enabled", !!val("wake_enabled", true), t("Listen for a wake word"),
         t("Keeps a small, local listener running so you can start hands-free.")) +
       '<div class="row wide"><div class="row-label"><label>' + esc(t("Wake phrases")) + '</label>' +
       '<p class="hint">' + esc(t("Short phrases the local listener watches for. Keep them two or three syllables.")) + '</p></div>' +
@@ -907,6 +943,7 @@
   }
 
   function secWake() {
+    loadWakeModel();
     return pageHead(t("Wake word"), t("Hands-free starting and stopping, handled locally on your machine.")) +
       card({ eyebrow: t("Wake word"), title: t("Listener"), cls: "glow", body: wakeBlock() });
   }
@@ -1455,10 +1492,15 @@
       hideRecorder();
       if (!res) return;
       if (!res.ok) { toast("warn", t("Shortcut capture was cancelled.")); return; }
-      var display = res.display || res.binding;
-      var patch = bindingPatch(which, display);
+      // Save the CANONICAL binding, never the display label. `record_binding`
+      // returns both: "xbutton1" and "Mouse button 4". Saving the label left the
+      // hotkey layer holding a value the mouse hook can never produce, so the
+      // mouse side button simply did nothing - with no error anywhere.
+      var canonical = res.binding || res.display;
+      var display = res.display || canonical;
+      var patch = bindingPatch(which, canonical);
       var c = cfg();
-      if (patch.shortcuts) { c.shortcuts = patch.shortcuts; } else { c[which] = display; }
+      if (patch.shortcuts) { c.shortcuts = patch.shortcuts; } else { c[which] = canonical; }
       if (res.conflict) {
         if (patch.shortcuts) patch.shortcuts[which] = { display: display, conflict: res.conflict };
         else patch[which] = { display: display, conflict: res.conflict };
@@ -1634,6 +1676,27 @@
 
       case "record": recordBinding(el.getAttribute("data-which")); break;
       case "rec-cancel": hideRecorder(); break;
+
+      case "wake-download": {
+        if (S.wakeBusy) break;
+        S.wakeBusy = true;
+        render();
+        toast("info", t("Downloading the wake-word model \u2014 about 20 MB, once."));
+        call("download_wake_model").then(function (res) {
+          S.wakeBusy = false;
+          // Force a fresh status read: the model may or may not have landed.
+          S.wakeModel = undefined;
+          S.wakeFetching = false;
+          if (res && res.ok) {
+            toast("info", t("Wake-word model installed. The listener starts automatically."));
+          } else {
+            toast("error", t("Could not download the model: {why}",
+                             { why: (res && res.detail) || t("unknown error") }));
+          }
+          render();
+        });
+        break;
+      }
 
       case "pick-folder": pickFolder(); break;
       case "pick-app": pickApp(); break;

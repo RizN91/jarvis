@@ -89,6 +89,11 @@ def _canonical(value: Any) -> str:
     low = text.lower()
     if low in hotkeys_mod.MOUSE_NAMES:
         return low
+    # A config written by the build that saved the UI label ("Mouse button 4")
+    # still has to resolve here, or conflict detection silently passes a
+    # duplicate mouse binding.
+    if low in getattr(hotkeys_mod, "MOUSE_LABELS", {}):
+        return hotkeys_mod.canonical_mouse(low)
     if low in ("none", "disabled", "not set", "unset"):
         return "none"
     # format_binding/parse_binding round-trip turns "Ctrl+Alt+Space" back into
@@ -673,6 +678,52 @@ class SettingsAPI:
             return None
 
     # -------------------------------------------------------------- wake word
+    def wake_model_status(self) -> dict:
+        """Is the local wake-word model on disk? The UI shows this, because a
+        wake word that is switched on but silently non-functional is the worst
+        possible state to leave someone in."""
+        try:
+            from ..audio import wake
+        except Exception as exc:
+            return {"available": False, "model": "", "detail":
+                    f"wake-word module unavailable: {exc}"}
+        try:
+            available = bool(wake.WakeWordDetector.is_available(
+                config.get("wake_model_dir")))
+            path = str(wake.default_model_dir())
+        except Exception as exc:
+            return {"available": False, "model": "", "detail": redact(str(exc))}
+        return {
+            "available": available,
+            "model": wake.MODEL_NAME,
+            "path": path,
+            "detail": ("installed" if available else
+                       "not downloaded yet — the wake word cannot work until it is"),
+        }
+
+    def download_wake_model(self) -> dict:
+        """Fetch and install the local wake-word model (~20 MB, once).
+
+        It is not vendored in the repository, so a fresh install has to fetch it
+        before the wake word can work at all. When it lands we re-save the config
+        purely to bump its mtime: the running tray app watches that file and
+        re-applies on change, so the listener starts without a restart.
+        """
+        try:
+            from ..audio import wake
+        except Exception as exc:
+            return {"ok": False, "detail": f"wake-word module unavailable: {exc}"}
+        try:
+            ok, detail = wake.ensure_model(config.get("wake_model_dir"))
+        except Exception as exc:
+            return {"ok": False, "detail": redact(str(exc))}
+        if ok:
+            try:
+                config.save()
+            except Exception:
+                pass
+        return {"ok": bool(ok), "detail": redact(str(detail))}
+
     def run_wake_setup(self) -> dict:
         try:
             from ..audio import wake
@@ -685,8 +736,10 @@ class SettingsAPI:
             return {"ok": False, "detail": redact(str(exc))}
         if not available:
             return {"ok": False, "detail": (
-                "the local wake-word model is not installed yet. Push-to-talk "
-                "still works. See docs/WAKE_WORD_NOTES.md for the download.")}
+                "the local wake-word model has not been downloaded yet, so the "
+                "wake word cannot work. Use \u201cDownload the model\u201d on the Wake "
+                "word settings page (about 20 MB, once). Push-to-talk still works "
+                "in the meantime.")}
         phrases = config.get("wake_phrases") or ["hey jarvis"]
         detections: list[str] = []
 

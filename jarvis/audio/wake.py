@@ -65,8 +65,10 @@ from typing import Callable, Optional, Sequence
 __all__ = [
     "WakeWordDetector",
     "MODEL_NAME",
+    "MODEL_URL",
     "SCORE_IS_TRIGGER_THRESHOLD",
     "default_model_dir",
+    "ensure_model",
     "model_help",
 ]
 
@@ -121,6 +123,121 @@ def model_help() -> str:
         f'  curl -L -o {MODEL_NAME}.tar.bz2 "{MODEL_URL}"\n'
         f"  tar xf {MODEL_NAME}.tar.bz2 -C {default_model_dir().parent}\n"
     )
+
+
+def _required_files_present(root: Path) -> bool:
+    if not root.is_dir():
+        return False
+    if not all((root / name).is_file() for name in _REQUIRED):
+        return False
+    # The encoder/joiner pair is what actually drives inference; a half-extracted
+    # directory that happens to contain tokens.txt is not usable.
+    return any(root.glob("*encoder*.onnx")) and any(root.glob("*joiner*.onnx"))
+
+
+def ensure_model(model_dir: Optional[str] = None, *,
+                 progress=None, timeout: float = 300.0) -> tuple[bool, str]:
+    """Make sure the KWS model is on disk, downloading it if it is not.
+
+    Returns ``(ok, detail)``. The tarball is ~20 MB and is deliberately **not**
+    vendored in the repository, so a fresh install has to fetch it once before
+    the wake word can work at all. Without this function the only route was a
+    documented ``curl`` command, which meant a user could switch the wake word
+    on, say the phrase, get nothing, and have no idea why.
+
+    ``progress`` is called as ``progress(fraction, detail)`` if given.
+
+    Downloads to a temporary directory and only moves the result into place once
+    the required files are present, so an interrupted download can never leave a
+    broken model behind that later reads as "installed but unusable".
+    """
+    # Imported here, not at module scope: the app imports this module on every
+    # start, and almost every start has no downloading to do.
+    import shutil
+    import tarfile
+    import tempfile
+    import urllib.error
+    import urllib.request
+
+    target = Path(model_dir).expanduser() if model_dir else default_model_dir()
+
+    if _required_files_present(target):
+        return True, f"already installed at {target}"
+
+    if target.exists() and not _required_files_present(target):
+        return False, (f"{target} exists but is not a usable model "
+                       f"(missing {', '.join(_REQUIRED)} or the onnx files). "
+                       f"Delete it and try again.")
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix="jarvis-kws-", dir=str(target.parent)))
+    archive = staging / f"{MODEL_NAME}.tar.bz2"
+
+    try:
+        if progress:
+            progress(0.02, "contacting github.com")
+        request = urllib.request.Request(
+            MODEL_URL, headers={"User-Agent": "jarvis-wake-setup/1.0"})
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            total = int(response.headers.get("Content-Length") or 0)
+            done = 0
+            with open(archive, "wb") as fh:
+                while True:
+                    chunk = response.read(262144)
+                    if not chunk:
+                        break
+                    fh.write(chunk)
+                    done += len(chunk)
+                    if progress:
+                        frac = (done / total) if total else 0.0
+                        progress(0.05 + 0.75 * min(frac, 1.0),
+                                 f"{done/1048576:.1f} MB"
+                                 + (f" of {total/1048576:.1f} MB" if total else ""))
+
+        if progress:
+            progress(0.82, "unpacking")
+        with tarfile.open(archive, "r:bz2") as tar:
+            # Refuse absolute paths and '..' — a release archive should not be
+            # able to write outside the staging directory.
+            for member in tar.getmembers():
+                name = member.name.replace("\\", "/")
+                if name.startswith("/") or ".." in name.split("/"):
+                    return False, f"refused an unsafe path in the archive: {name!r}"
+            tar.extractall(staging)
+
+        # The archive contains a single top-level directory named MODEL_NAME.
+        candidates = [staging / MODEL_NAME]
+        candidates += [p for p in staging.iterdir()
+                       if p.is_dir() and p.name != MODEL_NAME]
+        source = next((c for c in candidates if _required_files_present(c)), None)
+        if source is None:
+            return False, ("the downloaded archive did not contain a usable "
+                           f"model (looked for {', '.join(_REQUIRED)} and the "
+                           "onnx files)")
+
+        if progress:
+            progress(0.92, "installing")
+        if target.exists():
+            shutil.rmtree(target, ignore_errors=True)
+        shutil.move(str(source), str(target))
+
+        if not _required_files_present(target):
+            return False, f"installed to {target} but it still looks incomplete"
+
+        size_mb = sum(f.stat().st_size for f in target.rglob("*")
+                      if f.is_file()) / 1048576
+        if progress:
+            progress(1.0, "done")
+        return True, f"installed {MODEL_NAME} ({size_mb:.1f} MB) to {target}"
+
+    except urllib.error.HTTPError as exc:
+        return False, f"download failed: HTTP {exc.code} from {MODEL_URL}"
+    except urllib.error.URLError as exc:
+        return False, f"download failed: {exc.reason} (is there a network?)"
+    except Exception as exc:  # noqa: BLE001 - surfaced to the user verbatim
+        return False, f"{type(exc).__name__}: {exc}"
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
 
 
 def _pick(model_dir: Path, stem: str, prefer_int8: bool) -> Optional[Path]:

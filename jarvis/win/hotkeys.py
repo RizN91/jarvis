@@ -94,6 +94,32 @@ VK_MODS = {0x10: "shift", 0xA0: "shift", 0xA1: "shift",
 
 MOUSE_NAMES = {"xbutton1", "xbutton2", "middle"}
 
+#: Labels the settings UI shows for a mouse button. The recorder hands back the
+#: canonical value and the UI shows the label; a build once saved the LABEL into
+#: the config, where nothing could match it, so the side button went dead the
+#: moment the user recorded one. The reverse mapping lives here, beside
+#: MOUSE_NAMES, so producer and consumer cannot drift apart again.
+MOUSE_LABELS = {
+    "mouse button 4": "xbutton1",
+    "mouse button 5": "xbutton2",
+    "mouse button 3": "middle",
+    "middle button": "middle",
+    "mouse middle button": "middle",
+}
+
+
+def canonical_mouse(value) -> str:
+    """Accept a mouse binding however it was written; return a canonical name.
+
+    Anything unrecognised is passed through lowercased, which is what the old
+    code did for everything - so a genuinely bogus value still cannot match a
+    real button, it just no longer takes a valid one down with it.
+    """
+    low = str(value or "").strip().lower()
+    if low in MOUSE_NAMES:
+        return low
+    return MOUSE_LABELS.get(low, low)
+
 
 # ------------------------------------------------------------- structures
 class KBDLLHOOKSTRUCT(ctypes.Structure):
@@ -265,7 +291,7 @@ class HotkeyManager:
             self._bindings = dict(bindings or {})
             self._kb_vks = {}
             mouse = self._bindings.get("mouse_dictate", "none")
-            self._mouse_bound = None if mouse in (None, "none", "disabled") else str(mouse).lower()
+            self._mouse_bound = None if mouse in (None, "none", "disabled") else canonical_mouse(mouse)
 
             conflict = None
             seen: dict[str, str] = {}

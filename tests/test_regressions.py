@@ -745,6 +745,143 @@ def test_history_reads_back_what_dictation_wrote():
 
 
 # ==========================================================================
+# 12. The mouse-button binding, and the wake-word model
+#
+# WAS (mouse): the settings UI saved the DISPLAY label ("Mouse button 4") into
+# config.json instead of the canonical name ("xbutton1"). The mouse hook decodes
+# XBUTTON1/XBUTTON2 and compares against that string, so the side button was
+# dead the moment a user recorded one. Nothing errored: the UI showed the
+# binding, the log said the hotkeys started, and the button simply did nothing.
+#
+# WAS (wake word): the model is deliberately not vendored, and nothing could
+# fetch it - the only route was a curl command in a document. So a user could
+# switch the wake word on, say the phrase, get nothing, and have no way at all
+# to find out why. Worse, the app knew ("wake word enabled but the model is not
+# installed") and only said so in a log file.
+# ==========================================================================
+
+def test_mouse_labels_resolve_to_canonical_names():
+    """One vocabulary: the label the UI shows and the name the hook delivers."""
+    from jarvis.win import hotkeys
+    for label, canonical in (("Mouse button 4", "xbutton1"),
+                             ("Mouse button 5", "xbutton2"),
+                             ("Mouse middle button", "middle"),
+                             ("mouse button 4", "xbutton1"),
+                             ("MOUSE BUTTON 5", "xbutton2")):
+        got = hotkeys.canonical_mouse(label)
+        check(got == canonical,
+              f"{label!r} resolves to {canonical!r}", f"got {got!r}")
+    for name in ("xbutton1", "xbutton2", "middle"):
+        check(hotkeys.canonical_mouse(name) == name,
+              f"{name!r} still resolves to itself")
+    check(hotkeys.canonical_mouse("") == "" and hotkeys.canonical_mouse(None) == "",
+          "an empty value stays empty (so 'no button' is not turned into a button)")
+    check(hotkeys.canonical_mouse("banana") == "banana",
+          "an unknown value is passed through rather than mapped to a real button")
+
+
+def test_a_display_label_in_the_config_still_binds_the_mouse():
+    """The exact defect: this config produced _mouse_bound == 'mouse button 4'."""
+    from jarvis.win import hotkeys
+    mgr = hotkeys.HotkeyManager(bindings={"mouse_dictate": "Mouse button 4",
+                                          "key_dictate_toggle": "f8"})
+    check(mgr._mouse_bound == "xbutton1",
+          "a config written by the buggy build still binds the real button",
+          f"_mouse_bound={mgr._mouse_bound!r}")
+    check(mgr._mouse_bound in hotkeys.MOUSE_NAMES,
+          "and the bound value is one the mouse hook can actually deliver",
+          f"{mgr._mouse_bound!r} not in {sorted(hotkeys.MOUSE_NAMES)}")
+    check(mgr._mouse_bound != "mouse button 4",
+          "the raw label is NOT what gets bound (that was the bug)")
+    mgr2 = hotkeys.HotkeyManager(bindings={"mouse_dictate": "none"})
+    check(mgr2._mouse_bound is None, "'none' still disables the mouse button")
+
+
+def test_conflict_detection_sees_through_the_label():
+    """A duplicate written as a label must still be caught as a duplicate."""
+    from jarvis.ui import bridge
+    check(bridge._canonical("Mouse button 4") == "xbutton1",
+          "the bridge canonicalises a mouse label",
+          f"got {bridge._canonical('Mouse button 4')!r}")
+    check(bridge._canonical("xbutton1") == "xbutton1",
+          "and still canonicalises a canonical value")
+    check(bridge._canonical("Ctrl+Alt+Space") == "ctrl+alt+space",
+          "keyboard bindings are unaffected by the mouse change")
+
+
+def test_the_binding_recorder_saves_the_canonical_value():
+    """Guard the root cause in the source, not just the symptom.
+
+    record_binding() returns BOTH `binding` ("xbutton1") and `display`
+    ("Mouse button 4"); the UI must persist the first.
+    """
+    js = (_PROJECT_ROOT / "jarvis" / "ui" / "web" / "app.js").read_text(
+        encoding="utf-8", errors="replace")
+    check("var patch = bindingPatch(which, display);" not in js,
+          "app.js no longer feeds the display label into the saved binding")
+    check("var canonical = res.binding || res.display;" in js,
+          "app.js saves res.binding (the canonical value)")
+
+    from jarvis.ui import bridge
+    src = (_PROJECT_ROOT / "jarvis" / "ui" / "bridge.py").read_text(
+        encoding="utf-8", errors="replace")
+    check('"display": _display(canonical)' in src,
+          "record_binding still returns both the canonical value and a label")
+
+
+def test_wake_model_availability_checks_the_real_files():
+    """available must mean 'the files are there', not 'the folder exists'.
+
+    Network-free: only the paths that answer without downloading are exercised.
+    """
+    from jarvis.audio import wake
+    root = Path(tempfile.mkdtemp(prefix="reg-wake-")) / wake.MODEL_NAME
+    root.mkdir(parents=True)
+
+    ok, detail = wake.ensure_model(model_dir=str(root))
+    check(not ok, "an empty model directory is not accepted", detail)
+    check("not a usable model" in detail,
+          "and it says why instead of downloading over the top", detail)
+
+    (root / "tokens.txt").write_text("x", encoding="utf-8")
+    (root / "bpe.model").write_text("x", encoding="utf-8")
+    ok2, _ = wake.ensure_model(model_dir=str(root))
+    check(not ok2, "tokens.txt + bpe.model without the onnx files is still not a model")
+
+    (root / "encoder-x.onnx").write_bytes(b"x")
+    (root / "joiner-x.onnx").write_bytes(b"x")
+    ok3, detail3 = wake.ensure_model(model_dir=str(root))
+    check(ok3 and "already installed" in detail3,
+          "a complete model is accepted with no download", detail3)
+
+    check(wake.MODEL_URL.startswith("https://github.com/"),
+          "the model is fetched over https from the upstream release")
+    check(wake.MODEL_URL.endswith(".tar.bz2"), "and it is the tarball this module unpacks")
+
+
+def test_the_wake_model_can_be_installed_from_the_app():
+    """The downloader exists, and a user can reach it without a terminal."""
+    from jarvis.audio import wake
+    from jarvis.ui import bridge
+
+    check(callable(getattr(wake, "ensure_model", None)),
+          "wake.ensure_model exists (the model is not vendored, so it must be fetchable)")
+    check(hasattr(bridge.SettingsAPI, "download_wake_model"),
+          "the settings bridge exposes the download")
+    check(hasattr(bridge.SettingsAPI, "wake_model_status"),
+          "and a status the UI can show BEFORE the user hits the silence")
+
+    js = (_PROJECT_ROOT / "jarvis" / "ui" / "web" / "app.js").read_text(
+        encoding="utf-8", errors="replace")
+    check("wake-download" in js, "the UI has a control that triggers the download")
+    check("download_wake_model" in js, "and it calls the bridge method")
+    check("wake_model_status" in js,
+          "the wake settings page asks for the model status")
+    check("The wake-word model is not downloaded yet." in js,
+          "and says so in the UI when it is missing")
+
+
+# ==========================================================================
 
 TESTS = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
 
