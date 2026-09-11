@@ -14,6 +14,7 @@ ausführen.
 Kein Abo. Bring deinen eigenen OpenAI-Schlüssel mit. **Ab $0.0045 pro Minute.**
 
 [![Lizenz: MIT](https://img.shields.io/badge/License-MIT-3b82f6.svg)](LICENSE)
+[![CI: passing](https://github.com/RizN91/jarvis/actions/workflows/tests.yml/badge.svg)](https://github.com/RizN91/jarvis/actions/workflows/tests.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3b82f6.svg)](pyproject.toml)
 [![Plattform: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#plattformunterstützung)
 [![Tests: über 480 bestanden](https://img.shields.io/badge/tests-489%20passing-22c55e.svg)](CONTRIBUTING.md)

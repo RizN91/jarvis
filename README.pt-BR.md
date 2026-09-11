@@ -14,6 +14,7 @@ Sem assinatura. Use sua própria chave da OpenAI. **A partir de $0.0045 por
 minuto.**
 
 [![Licença: MIT](https://img.shields.io/badge/License-MIT-3b82f6.svg)](LICENSE)
+[![CI: passing](https://github.com/RizN91/jarvis/actions/workflows/tests.yml/badge.svg)](https://github.com/RizN91/jarvis/actions/workflows/tests.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3b82f6.svg)](pyproject.toml)
 [![Plataforma: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#suporte-de-plataforma)
 [![Testes: mais de 480 passando](https://img.shields.io/badge/tests-489%20passing-22c55e.svg)](CONTRIBUTING.md)

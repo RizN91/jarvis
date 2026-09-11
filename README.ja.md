@@ -14,6 +14,7 @@
 **1 分あたり $0.0045 から。**
 
 [![ライセンス: MIT](https://img.shields.io/badge/License-MIT-3b82f6.svg)](LICENSE)
+[![CI: passing](https://github.com/RizN91/jarvis/actions/workflows/tests.yml/badge.svg)](https://github.com/RizN91/jarvis/actions/workflows/tests.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3b82f6.svg)](pyproject.toml)
 [![プラットフォーム: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#対応プラットフォーム)
 [![テスト: 480 件以上パス](https://img.shields.io/badge/tests-489%20passing-22c55e.svg)](CONTRIBUTING.md)
