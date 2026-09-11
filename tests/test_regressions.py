@@ -882,6 +882,97 @@ def test_the_wake_model_can_be_installed_from_the_app():
 
 
 # ==========================================================================
+# 13. The device list, and resolving a saved device name
+#
+# WAS: the settings page offered every PortAudio device from every host API at
+# once - MME, DirectSound, WASAPI and WDM-KS each listing the same microphone,
+# plus aliases like "Microsoft Sound Mapper" and, because WDM-KS exposes outputs
+# as capture endpoints, "PC Speaker" in the microphone list. A machine with two
+# microphones showed sixteen. The saved name was the MME one, truncated to 31
+# characters ("Microphone (BlackShark V3 X USB"), and nothing resolved a saved
+# name to an index at all - it went straight to PortAudio, so a device that had
+# since been unplugged raised instead of falling back to the default.
+# ==========================================================================
+
+def test_the_device_list_shows_real_devices_only():
+    """One row per physical device, from a single host API."""
+    from jarvis.audio import capture
+    all_devices = []
+    try:
+        import sounddevice as sd
+        all_devices = list(sd.query_devices())
+    except Exception:
+        pass
+
+    for want_input, label in ((True, "input"), (False, "output")):
+        got = capture.list_input_devices() if want_input else capture.list_output_devices()
+        key = "max_input_channels" if want_input else "max_output_channels"
+        raw = [d for d in all_devices if int(d.get(key, 0)) > 0]
+
+        if not got:
+            check(True, f"{label}: no devices on this machine (skipped)")
+            continue
+
+        check(len(got) <= len(raw),
+              f"{label} list is never longer than the raw PortAudio list",
+              f"{len(got)} vs {len(raw)}")
+        check(len(got) <= 8,
+              f"{label} list is a short, human-sized list",
+              f"{len(got)} entries")
+
+        # every row must be usable as a stream argument
+        check(all(isinstance(d.index, int) for d in got),
+              f"{label}: every row carries a real PortAudio index")
+
+        names = [d.name.strip().lower() for d in got]
+        check(len(names) == len(set(names)),
+              f"{label}: no duplicate names", f"{names}")
+
+        apis = {d.host_api for d in got}
+        check(len(apis) <= 1,
+              f"{label}: all rows come from ONE host API (that is the fix)",
+              f"{sorted(apis)}")
+
+        low = " ".join(names)
+        check("microsoft sound mapper" not in low,
+              f"{label}: aliases are filtered out")
+        if want_input:
+            check("pc speaker" not in low,
+                  "the output endpoint WDM-KS exposes is not offered as a microphone")
+
+
+def test_resolving_a_saved_device_name():
+    """A saved name must become a real index, or None - never an exception."""
+    from jarvis.audio import capture
+    devices = capture.list_input_devices()
+    if not devices:
+        check(True, "no input devices to resolve against (skipped)")
+        return
+    first = devices[0]
+
+    check(capture.resolve_device(first.name) == first.index,
+          "a full name resolves to its index")
+    check(capture.resolve_device(first.index) == first.index,
+          "an index resolves to itself")
+    check(capture.resolve_device(None) is None,
+          "None means 'system default', not 'device 0'")
+    check(capture.resolve_device("") is None, "an empty string means default too")
+    check(capture.resolve_device("Microphone (A Headset That Is Not Plugged In)") is None,
+          "an unplugged device falls back to the default instead of raising")
+    check(capture.resolve_device(999999) is None,
+          "an index that is no longer present falls back instead of raising")
+    check(capture.resolve_device(True) is None,
+          "a bool is not treated as index 1")
+
+    # The exact shape an older build saved: MME's 31-character truncation must
+    # still find the real device, or the fix does nothing for existing installs.
+    truncated = first.name[:31]
+    check(capture.resolve_device(truncated) == first.index,
+          "a 31-character MME-truncated name still resolves",
+          f"{truncated!r} -> {capture.resolve_device(truncated)}")
+
+
+# ==========================================================================
 
 TESTS = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
 

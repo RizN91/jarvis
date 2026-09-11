@@ -341,7 +341,7 @@ class SettingsAPI:
 
         def run() -> None:
             from ..audio import capture as audio_capture
-            device = config.get("input_device")
+            device = audio_capture.resolve_device(config.get("input_device"))
             cap = audio_capture.MicrophoneCapture(
                 rate=24000, device=device,
                 on_level=lambda rms: self._push("mic_level", {"rms": round(rms, 5)}))
@@ -522,7 +522,9 @@ class SettingsAPI:
         try:
             from ..audio import capture as audio_capture
             ins = audio_capture.list_input_devices()
-            cap = audio_capture.MicrophoneCapture(rate=24000, device=config.get("input_device"))
+            cap = audio_capture.MicrophoneCapture(
+                rate=24000,
+                device=audio_capture.resolve_device(config.get("input_device")))
             cap.start()
             time.sleep(0.6)
             level, running = cap.level, cap.running

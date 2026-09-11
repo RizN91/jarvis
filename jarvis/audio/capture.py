@@ -64,40 +64,152 @@ class DeviceInfo:
                 "default": self.default, "host_api": self.host_api}
 
 
-def list_input_devices() -> list[DeviceInfo]:
+#: Host APIs in the order we prefer them. WASAPI is the modern Windows API: it
+#: lists each physical device ONCE, with its full name. PortAudio reports every
+#: API, so the same microphone appears again under MME, DirectSound and WDM-KS -
+#: which is why a machine with two microphones was showing sixteen, and why the
+#: MME copies arrive truncated to 31 characters
+#: ("Microphone (BlackShark V3 X USB" with no closing bracket).
+_HOSTAPI_PREFERENCE = ("Windows WASAPI", "Windows DirectSound", "MME",
+                       "Windows WDM-KS")
+
+#: Entries PortAudio synthesises that are not real hardware. "Microsoft Sound
+#: Mapper" and "Primary Sound Capture Driver" are aliases, and WDM-KS exposes
+#: outputs as capture endpoints, so "PC Speaker" turns up in the input list.
+_ABSTRACT_NAMES = ("microsoft sound mapper", "primary sound capture driver",
+                   "primary sound driver", "sound mapper", "pc speaker",
+                   "default audio device")
+
+
+def _looks_abstract(name: str) -> bool:
+    low = name.strip().lower()
+    return any(a in low for a in _ABSTRACT_NAMES)
+
+
+def _list_devices(want_input: bool) -> list[DeviceInfo]:
+    """Real devices for one direction, from a single host API.
+
+    The full PortAudio list is not what a person means by "my microphones": it
+    is every API's view of them. Picking the most capable API that has anything
+    to offer gives one row per physical device with its real name.
+    """
     sd = _sd()
-    out: list[DeviceInfo] = []
+    key = "max_input_channels" if want_input else "max_output_channels"
+    default_slot = 0 if want_input else 1
+
     try:
-        default_in = sd.default.device[0]
+        devices = list(sd.query_devices())
     except Exception:
-        default_in = -1
-    for i, d in enumerate(sd.query_devices()):
-        if int(d.get("max_input_channels", 0)) > 0:
-            try:
-                api = sd.query_hostapis(d["hostapi"])["name"]
-            except Exception:
-                api = ""
-            out.append(DeviceInfo(i, str(d["name"]), int(d["max_input_channels"]),
-                                  i == default_in, api))
+        return []
+    try:
+        hostapis = list(sd.query_hostapis())
+    except Exception:
+        hostapis = []
+
+    def api_name(d) -> str:
+        try:
+            return str(hostapis[int(d["hostapi"])]["name"])
+        except Exception:
+            return ""
+
+    by_api: dict[str, list[int]] = {}
+    for i, d in enumerate(devices):
+        try:
+            if int(d.get(key, 0)) <= 0:
+                continue
+        except Exception:
+            continue
+        if _looks_abstract(str(d.get("name", ""))):
+            continue
+        by_api.setdefault(api_name(d), []).append(i)
+
+    if not by_api:
+        return []
+
+    chosen = next((a for a in _HOSTAPI_PREFERENCE if by_api.get(a)), None)
+    if chosen is None:
+        chosen = max(by_api, key=lambda a: len(by_api[a]))
+
+    # PortAudio's default index lives in the global numbering and may belong to
+    # a different API than the one we kept, so match it by name instead.
+    default_name = ""
+    try:
+        default_index = int(sd.default.device[default_slot])
+        if 0 <= default_index < len(devices):
+            default_name = str(devices[default_index].get("name", "")).strip().lower()
+    except Exception:
+        pass
+
+    out: list[DeviceInfo] = []
+    seen: set[str] = set()
+    default_norm = _norm(default_name)
+    for i in by_api[chosen]:
+        name = str(devices[i].get("name", "")).strip()
+        if not name or name.lower() in seen:
+            continue
+        seen.add(name.lower())
+        is_default = bool(default_norm) and _norm(name) == default_norm
+        out.append(DeviceInfo(i, name, int(devices[i][key]), is_default, chosen))
+
+    # The default may live under an API we did not keep, so if nothing matched
+    # by name the first entry is the closest thing to a sensible default.
+    if out and not any(d.default for d in out):
+        out[0].default = True
     return out
+
+
+def _norm(name: str) -> str:
+    """Normalise a device name so names from different APIs can be compared.
+
+    MME truncates to 31 characters, so the same microphone is
+    "Microphone (BlackShark V3 X USB" there and "...USB)" under WASAPI. Dropping
+    brackets, trailing punctuation and case makes the two comparable.
+    """
+    s = str(name or "").strip().lower()
+    for ch in "()[]{}":
+        s = s.replace(ch, " ")
+    return " ".join(s.split()).rstrip(",.")
+
+
+def resolve_device(value, want_input: bool = True) -> Optional[int]:
+    """Turn a configured device into a real index, or None for the default.
+
+    Accepts an index, a full name, or the truncated name an older build saved
+    (which is what MME reports). A name that no longer exists - the headset got
+    unplugged - resolves to None rather than being handed to PortAudio, where it
+    would raise and take the whole dictation path down with it.
+    """
+    devices = list_input_devices() if want_input else list_output_devices()
+    if value is None or value == "":
+        return None
+
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if any(d.index == value for d in devices) else None
+    if isinstance(value, float) and float(value).is_integer():
+        return resolve_device(int(value), want_input)
+
+    wanted = _norm(value)
+    if not wanted:
+        return None
+
+    for d in devices:                       # exact, once normalised
+        if _norm(d.name) == wanted:
+            return d.index
+    for d in devices:                       # one is a prefix of the other
+        got = _norm(d.name)
+        if got.startswith(wanted) or wanted.startswith(got):
+            return d.index
+    return None
+
+
+def list_input_devices() -> list[DeviceInfo]:
+    return _list_devices(want_input=True)
 
 
 def list_output_devices() -> list[DeviceInfo]:
-    sd = _sd()
-    out: list[DeviceInfo] = []
-    try:
-        default_out = sd.default.device[1]
-    except Exception:
-        default_out = -1
-    for i, d in enumerate(sd.query_devices()):
-        if int(d.get("max_output_channels", 0)) > 0:
-            try:
-                api = sd.query_hostapis(d["hostapi"])["name"]
-            except Exception:
-                api = ""
-            out.append(DeviceInfo(i, str(d["name"]), int(d["max_output_channels"]),
-                                  i == default_out, api))
-    return out
+    return _list_devices(want_input=False)
 
 
 class WakePreRoll:

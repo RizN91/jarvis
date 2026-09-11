@@ -743,7 +743,7 @@ class AssistantSession:
         self.speaker.start()
         self.capture = audio_capture.MicrophoneCapture(
             rate=live.DEFAULT_RATE,
-            device=self.cfg.get("input_device"),
+            device=audio_capture.resolve_device(self.cfg.get("input_device")),
             gain=float(self.cfg.get("input_gain", 1.0)),
             on_chunk=self._on_mic_chunk,
             on_level=self.app._on_mic_level,
