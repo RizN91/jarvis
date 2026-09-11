@@ -357,6 +357,137 @@ async def miclevel(args: argparse.Namespace) -> int:
     return 0
 
 
+def volume_report() -> None:
+    """Print the Windows master volume and mute state.
+
+    First thing to check when the app "works" but nothing is audible: every
+    layer can be correct while the endpoint is simply muted or at zero.
+    """
+    try:
+        from jarvis.core.tools import _EndpointVolume
+    except Exception as exc:
+        say(f"  (could not read the system volume: {exc})")
+        return
+    ep = _EndpointVolume()
+    if not ep.available:
+        say("  (could not read the system volume on this machine)")
+        return
+    level = ep.get_level()
+    muted = ep.get_mute()
+    pct = "unknown" if level is None else f"{level * 100:.0f}%"
+    say(f"  Windows master volume : {pct}")
+    say(f"  Windows muted         : {muted}")
+    if muted:
+        say("  *** THE OUTPUT IS MUTED. That alone explains hearing nothing. ***")
+    elif level is not None and level < 0.05:
+        say("  *** The volume is essentially ZERO. ***")
+
+
+def make_chime(rate: int = live.DEFAULT_RATE) -> bytes:
+    """Three rising beeps - unmistakable, and clearly not speech.
+
+    A test tone rather than a spoken phrase on purpose: if a chime cannot be
+    heard, no amount of working API will help, and the fault is the speaker
+    routing rather than anything upstream.
+    """
+    import array
+    import math
+
+    seconds = 1.5
+    n = int(rate * seconds)
+    buf = array.array("h", bytes(2 * n))
+    for start, dur, freq in ((0.00, 0.28, 523.25),
+                             (0.36, 0.28, 659.25),
+                             (0.72, 0.62, 783.99)):
+        i0, i1 = int(start * rate), min(int((start + dur) * rate), n)
+        for i in range(i0, i1):
+            t = (i - i0) / rate
+            # short attack and decay, so the beep does not click
+            env = min(1.0, t / 0.02) * min(1.0, max(0.0, (dur - t) / 0.06))
+            sample = 0.45 * env * math.sin(2 * math.pi * freq * t)
+            buf[i] = int(max(-1.0, min(1.0, sample)) * 32767)
+    return buf.tobytes()
+
+
+async def play_on(index, chime: bytes, label: str) -> bool:
+    """Play the chime once on one device, verifying it actually drained.
+
+    "Handed to the speaker" is a weak claim - it only means play() was called.
+    PortAudio can accept a buffer and produce nothing. This waits for the queue
+    to empty and reports the observed drain, so "it played" is measured rather
+    than assumed.
+    """
+    speaker = playback.Speaker(rate=live.DEFAULT_RATE, device=index, volume=1.0)
+    speaker.start()
+    try:
+        queued_before = speaker.queued_bytes
+        speaker.play(chime)
+        queued_after = speaker.queued_bytes
+        drained_at = None
+        waited = 0.0
+        while waited < 5.0:
+            if speaker.queued_bytes <= 0:
+                drained_at = waited
+                break
+            await asyncio.sleep(0.1)
+            waited += 0.1
+        if drained_at is None:
+            say(f"      ! the speaker never consumed the audio "
+                f"({speaker.queued_bytes} bytes still queued)")
+            return False
+        say(f"      played and drained in {drained_at:.1f}s "
+            f"(queued {queued_before} -> {queued_after} bytes)")
+        return True
+    except Exception as exc:
+        say(f"      ! the speaker refused it: {exc}")
+        return False
+    finally:
+        speaker.stop()
+
+
+async def soundcheck(args: argparse.Namespace) -> int:
+    """Play the chime on EVERY output, one at a time, naming each.
+
+    This is how you find where sound actually comes out. A headset commonly
+    exposes several endpoints (USB, Bluetooth, "Speakers") and Windows is happy
+    to send audio to one while you are listening on another - which looks
+    exactly like the app producing no sound at all.
+    """
+    devices = audio_capture.list_output_devices()
+    if args.out is not None:
+        devices = [d for d in devices if d.index == args.out] or devices[:1]
+
+    chime = make_chime()
+    say("Before the beeps, the state of the Windows output:")
+    volume_report()
+    print()
+    say(f"Playing a chime on each of {len(devices)} outputs, one at a time.")
+    say("Listen for three rising beeps and note WHICH ONE you hear.\n")
+
+    for n, dev in enumerate(devices, 1):
+        tag = "  [Windows default]" if dev.default else ""
+        say(f"  {n}/{len(devices)}  >>> {dev.name}{tag}")
+        await play_on(dev.index, chime, dev.name)
+        await asyncio.sleep(0.6)
+
+    print()
+    say("Done. If you heard the beeps only on SOME of those, tell me which")
+    say("number - that is the device we point Jarvis at.")
+    say("If you heard NOTHING at all, the problem is Windows volume or the")
+    say("headset itself, not Jarvis: check the headset's own dial/mute button")
+    say("and the Windows volume mixer (right-click the speaker icon).")
+    return 0
+
+
+async def tone(args: argparse.Namespace) -> int:
+    """Play the chime once on the resolved output device."""
+    index = audio_capture.resolve_device(args.out, want_input=False)
+    say(f"Playing a chime on: {describe(index, want_input=False)}")
+    await play_on(index, make_chime(), "chime")
+    say("If you did not hear it, run:  simple_voice.py --soundcheck")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Talk to GPT-Live and hear it back - nothing else.",
@@ -368,6 +499,10 @@ def main() -> int:
                     help="check devices, mic, session and speakers, then exit")
     ap.add_argument("--miclevel", action="store_true",
                     help="live microphone level meter (free - no API calls)")
+    ap.add_argument("--tone", action="store_true",
+                    help="play a test chime on the chosen speakers (free)")
+    ap.add_argument("--soundcheck", action="store_true",
+                    help="play a chime on EVERY speaker, one at a time (free)")
     ap.add_argument("--no-greet", action="store_true",
                     help="say nothing; wait for you to speak first")
     args = ap.parse_args()
@@ -375,6 +510,10 @@ def main() -> int:
     if args.list:
         list_devices()
         return 0
+    if args.tone:
+        return asyncio.run(tone(args))
+    if args.soundcheck:
+        return asyncio.run(soundcheck(args))
     if args.miclevel:
         try:
             return asyncio.run(miclevel(args))
