@@ -40,7 +40,7 @@ async def main() -> int:
             delegation={
                 "type": "responses",
                 "responses": {
-                    "model": "gpt-6-luna",
+                    "model": "gpt-5.6-luna",  # must be a real id - see simple_voice.py
                     "instructions": "Answer briefly and out loud.",
                     "parallel_tool_calls": False,
                 },

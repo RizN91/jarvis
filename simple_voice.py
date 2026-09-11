@@ -84,6 +84,7 @@ async def run(args: argparse.Namespace) -> int:
 
     loop_ref: dict[str, asyncio.AbstractEventLoop] = {}
     audio_seconds = {"n": 0.0}
+    sent_chunks = {"n": 0}      # mic blocks actually forwarded to the session
 
     speaker = playback.Speaker(
         rate=live.DEFAULT_RATE, device=out_dev, volume=1.0)
@@ -92,6 +93,14 @@ async def run(args: argparse.Namespace) -> int:
     def on_audio(pcm: bytes) -> None:
         audio_seconds["n"] += len(pcm) / 2 / live.DEFAULT_RATE
         speaker.play(pcm)
+
+    # Take the backend model from the app's own config rather than hardcoding it.
+    # A hardcoded name drifts: this file shipped "gpt-6-luna", which does not
+    # exist, so every delegation failed with invalid_request_error while the
+    # conversation itself still worked - a confusing half-failure.
+    from jarvis import config as jarvis_config
+    backend = (jarvis_config.get("backend_model") or "").strip() or "gpt-5.6-luna"
+    say(f"backend model : {backend}")
 
     session = live.LiveSession(
         live.LiveConfig(
@@ -103,7 +112,7 @@ async def run(args: argparse.Namespace) -> int:
             delegation={
                 "type": "responses",
                 "responses": {
-                    "model": "gpt-6-luna",
+                    "model": backend,
                     "instructions": "Answer briefly, in plain spoken text.",
                     "parallel_tool_calls": False,
                 },
@@ -121,12 +130,24 @@ async def run(args: argparse.Namespace) -> int:
     say(f"session open  (id {session.session_id})")
     say("$0.05/min starts now. Just talk. Ctrl+C to stop.\n")
 
+    # THE ASSIGNMENT THAT WAS MISSING. `on_chunk` below reads this to hand mic
+    # audio to the session from the capture thread. It was never set, so every
+    # chunk was dropped and the assistant never heard a word - the single reason
+    # this app was silent while everything else reported success.
+    loop_ref["loop"] = asyncio.get_running_loop()
+
     def on_chunk(pcm: bytes) -> None:
+        # THE BUG THAT MADE THIS SILENT: this used to read loop_ref["loop"], but
+        # nothing ever assigned it, so every chunk returned early and the model
+        # received no audio at all. It then had nothing to answer, and the app
+        # looked broken while being perfectly healthy. Fall back to the running
+        # loop so the microphone cannot silently stop feeding the session.
         loop = loop_ref.get("loop")
-        if loop is None or session.closed:
+        if loop is None or loop.is_closed() or session.closed:
             return
         try:
             asyncio.run_coroutine_threadsafe(session.append_audio(pcm), loop)
+            sent_chunks["n"] += 1
         except Exception:
             pass
 
@@ -186,6 +207,11 @@ async def run(args: argparse.Namespace) -> int:
         say(f"\nsession {report.usage_seconds:.1f}s of voice time "
             f"(${report.usage_seconds / 60 * 0.05:.4f}), "
             f"{audio_seconds['n']:.1f}s of reply audio played")
+    say(f"your microphone sent {sent_chunks['n']} blocks to the model")
+    if sent_chunks["n"] == 0:
+        say("*** NOTHING was sent - the microphone never fed the session, which "
+            "means the model had nothing to answer. That is a bug, not a "
+            "misunderstanding: tell me and I will fix it. ***")
     return 0
 
 
