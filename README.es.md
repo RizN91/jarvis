@@ -98,9 +98,9 @@ Todos ellos se pueden reasignar en el asistente de configuración —a otra tecl
 
 ## Míralo funcionar
 
-[![Jarvis demo](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
+<video src="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4" poster="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-preview.webp" controls preload="metadata" width="100%"></video>
 
-**▶ Ver la demo de 88 segundos con sonido** · 1080p, 12 MB
+**[▶ Ver la demo de 88 segundos con sonido](https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4)** · 1080p, 12 MB
 
 ---
 

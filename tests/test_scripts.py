@@ -774,6 +774,43 @@ def check_readme_anchors():
     return True, f"{len(files)} READMEs, all in-page anchors resolve"
 
 
+@check("every README plays the demo instead of linking a file GitHub cannot render")
+def check_readme_video_player():
+    """A repo-relative video link is a dead end, and a big blob is worse.
+
+    GitHub resolves `](docs/media/x.mp4)` to the blob page, which refuses a file
+    this size ("we can't show files that are this big right now") and stalls the
+    preview after a second or two, so the clip never plays. Every README must
+    therefore embed the demo in a <video> element whose src is a streaming URL.
+
+    The URL in use, cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/..., was
+    verified by header probe rather than assumed: it answers `206 Partial
+    Content` with `Content-Type: video/mp4` and `content-range: bytes
+    0-1023/12969344`, and the first 64 bytes are identical to the repo file. Do
+    not "simplify" it back to a repo path: raw.githubusercontent.com and release
+    assets both answer `application/octet-stream` with `X-Content-Type-Options:
+    nosniff` (browsers refuse to play those), and media.githubusercontent.com
+    404s for a file that is not in LFS.
+    """
+    problems: list[str] = []
+    files = sorted(ROOT.glob("README*.md"))
+    if not files:
+        return False, "no README*.md found"
+    for f in files:
+        text = f.read_text(encoding="utf-8", errors="replace")
+        for bad in re.findall(r"\]\((docs/media/[^)]+\.(?:mp4|mov|webm))\)", text):
+            problems.append(f"{f.name}: links {bad}, which the blob page cannot play")
+        srcs = re.findall(r'<video[^>]*\ssrc="([^"]+)"', text)
+        if not srcs:
+            problems.append(f"{f.name}: no <video> player for the demo")
+        for src in srcs:
+            if not src.startswith("https://"):
+                problems.append(f"{f.name}: <video> src is not a streaming URL: {src}")
+    if problems:
+        return False, "; ".join(problems)
+    return True, f"{len(files)} READMEs embed the demo as a streaming <video>"
+
+
 # ------------------------------------------------------------------- the runner
 
 def run_all() -> list[tuple[str, bool, str]]:

@@ -98,9 +98,9 @@ Jede davon lässt sich im Einrichtungsassistenten neu belegen — auf eine ander
 
 ## Sieh es in Aktion
 
-[![Jarvis demo](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
+<video src="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4" poster="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-preview.webp" controls preload="metadata" width="100%"></video>
 
-**▶ Die 88-Sekunden-Demo mit Ton ansehen** · 1080p, 12 MB
+**[▶ Die 88-Sekunden-Demo mit Ton ansehen](https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4)** · 1080p, 12 MB
 
 ---
 

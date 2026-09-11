@@ -111,13 +111,13 @@ different mouse button, or nothing at all.
 
 ## Watch it work
 
-[![Jarvis — the floating pill, and real dictation landing in Notepad](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
+<video src="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4" poster="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-preview.webp" controls preload="metadata" width="100%"></video>
 
 *A real session, not a mockup.* The pill and the text arriving in Notepad are the
 shipped code running — the clip is generated from the app itself, so it cannot
 quietly drift from what you download.
 
-**[▶ Watch the 88-second demo with sound](docs/media/jarvis-demo.mp4)** · 1080p, 12 MB
+**[▶ Watch the 88-second demo with sound](https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4)** · 1080p, 12 MB
 
 ---
 

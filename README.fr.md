@@ -99,9 +99,9 @@ Chacun d'eux est réassignable dans l'assistant de configuration — vers une au
 
 ## Voyez-le en action
 
-[![Jarvis demo](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
+<video src="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4" poster="https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-preview.webp" controls preload="metadata" width="100%"></video>
 
-**▶ Voir la démo de 88 secondes avec le son** · 1080p, 12 MB
+**[▶ Voir la démo de 88 secondes avec le son](https://cdn.jsdelivr.net/gh/RizN91/jarvis@main/docs/media/jarvis-demo.mp4)** · 1080p, 12 MB
 
 ---
 
