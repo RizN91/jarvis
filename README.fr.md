@@ -16,9 +16,9 @@ minute.**
 
 [![Licence : MIT](https://img.shields.io/badge/License-MIT-3b82f6.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3b82f6.svg)](pyproject.toml)
-[![Plateforme : Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#platform-support)
+[![Plateforme : Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#plateformes-prises-en-charge)
 [![Tests : plus de 480 réussis](https://img.shields.io/badge/tests-489%20passing-22c55e.svg)](CONTRIBUTING.md)
-[![Langues : 15](https://img.shields.io/badge/languages-15-8b5cf6.svg)](#speaks-your-language)
+[![Langues : 15](https://img.shields.io/badge/languages-15-8b5cf6.svg)](#parle-votre-langue)
 
 **Lire ce document en :** [English](README.md) · [Español](README.es.md) · **Français** · [Deutsch](README.de.md) · [Português (BR)](README.pt-BR.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
 

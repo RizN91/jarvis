@@ -45,14 +45,41 @@ What must survive translation unchanged:
   (`CONTRIBUTING.md`, `LICENSE`, `SECURITY.md`, `ARCHITECTURE.md`,
   `docs/images/…`). Translations do not link to each other's folders.
 
-The badge image URLs and the badge links keep their English `#anchor` slugs
-(`#platform-support`, `#speaks-your-language`) on purpose: those URLs are part of
-the published badge markup, and only the alt text around them is translated. The
-anchors therefore still target the English headings, so a badge click on a
-translated page falls back to the top of the page instead of jumping to the
-section. If you would rather have working in-page jumps, translate the anchor in
-the *link target* as well as the heading — but do it in every file at once, or
-the pages stop matching each other.
+The badge image URLs are part of the published badge markup and are never
+translated — only the alt text around them is. The badge *link* targets,
+however, must match the heading slug of the page they are on: a translated
+heading produces a translated anchor, so `#platform-support` points at nothing
+on a page whose heading is `## Plattformunterstützung`, and GitHub silently falls
+back to the top of the page.
+
+Every translated file therefore points its two in-page badges at its own
+translated headings, e.g.
+
+| File | Platform badge | Languages badge |
+| --- | --- | --- |
+| `README.de.md` | `#plattformunterstützung` | `#spricht-deine-sprache` |
+| `README.es.md` | `#compatibilidad-de-plataformas` | `#habla-tu-idioma` |
+| `README.fr.md` | `#plateformes-prises-en-charge` | `#parle-votre-langue` |
+| `README.ja.md` | `#対応プラットフォーム` | `#あなたの言語に対応` |
+| `README.pt-BR.md` | `#suporte-de-plataforma` | `#fala-o-seu-idioma` |
+| `README.zh-CN.md` | `#平台支持` | `#会说你的语言` |
+
+When you translate a heading that a badge points at, update the badge's anchor in
+the same commit. A quick check for every file at once:
+
+```bash
+python - <<'EOF'
+import re, pathlib
+def slug(h):
+    s = re.sub(r'[^\w\s-]', '', h.strip().lower(), flags=re.UNICODE)
+    return re.sub(r'\s+', '-', s.strip())
+for f in sorted(pathlib.Path('.').glob('README*.md')):
+    t = f.read_text(encoding='utf-8')
+    heads = {slug(m.group(1)) for m in re.finditer(r'^#{1,6}\s+(.*)$', t, re.M)}
+    bad = [a for a in set(re.findall(r'\]\(#([^)]+)\)', t)) if a not in heads]
+    print(f.name, 'BROKEN:', bad or 'none')
+EOF
+```
 
 ## Adding a language
 

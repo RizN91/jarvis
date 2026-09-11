@@ -15,9 +15,9 @@
 
 [![ライセンス: MIT](https://img.shields.io/badge/License-MIT-3b82f6.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3b82f6.svg)](pyproject.toml)
-[![プラットフォーム: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#platform-support)
+[![プラットフォーム: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#対応プラットフォーム)
 [![テスト: 480 件以上パス](https://img.shields.io/badge/tests-489%20passing-22c55e.svg)](CONTRIBUTING.md)
-[![言語: 15](https://img.shields.io/badge/languages-15-8b5cf6.svg)](#speaks-your-language)
+[![言語: 15](https://img.shields.io/badge/languages-15-8b5cf6.svg)](#あなたの言語に対応)
 
 **読む言語:** [English](README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português (BR)](README.pt-BR.md) · [简体中文](README.zh-CN.md) · **日本語**
 

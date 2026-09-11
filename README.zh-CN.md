@@ -14,9 +14,9 @@
 
 [![许可证：MIT](https://img.shields.io/badge/License-MIT-3b82f6.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3b82f6.svg)](pyproject.toml)
-[![平台：Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#platform-support)
+[![平台：Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#平台支持)
 [![测试：480 项以上通过](https://img.shields.io/badge/tests-489%20passing-22c55e.svg)](CONTRIBUTING.md)
-[![语言：15 种](https://img.shields.io/badge/languages-15-8b5cf6.svg)](#speaks-your-language)
+[![语言：15 种](https://img.shields.io/badge/languages-15-8b5cf6.svg)](#会说你的语言)
 
 **阅读语言：** [English](README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português (BR)](README.pt-BR.md) · **简体中文** · [日本語](README.ja.md)
 

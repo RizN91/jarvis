@@ -15,9 +15,9 @@ Kein Abo. Bring deinen eigenen OpenAI-Schlüssel mit. **Ab $0.0045 pro Minute.**
 
 [![Lizenz: MIT](https://img.shields.io/badge/License-MIT-3b82f6.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3b82f6.svg)](pyproject.toml)
-[![Plattform: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#platform-support)
+[![Plattform: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#plattformunterstützung)
 [![Tests: über 480 bestanden](https://img.shields.io/badge/tests-489%20passing-22c55e.svg)](CONTRIBUTING.md)
-[![Sprachen: 15](https://img.shields.io/badge/languages-15-8b5cf6.svg)](#speaks-your-language)
+[![Sprachen: 15](https://img.shields.io/badge/languages-15-8b5cf6.svg)](#spricht-deine-sprache)
 
 **Auf Deutsch lesen:** [English](README.md) · [Español](README.es.md) · [Français](README.fr.md) · **Deutsch** · [Português (BR)](README.pt-BR.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
 
