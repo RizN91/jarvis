@@ -743,6 +743,37 @@ def check_install_sh():
                   "--dry-run exits 0 and creates nothing; never claims success")
 
 
+@check("every README's in-page badge links resolve to a real heading")
+def check_readme_anchors():
+    """A translated heading means a translated anchor.
+
+    The translations keep the English badge *images*, but a badge *link* of
+    '#platform-support' points at nothing on a page whose heading is
+    '## Plattformunterstützung' — GitHub silently falls back to the top, so the
+    link looks fine in a diff and is dead on the page. Every translated file
+    shipped that bug once already.
+    """
+    def slug(heading: str) -> str:
+        s = re.sub(r"[^\w\s-]", "", heading.strip().lower(), flags=re.UNICODE)
+        return re.sub(r"\s+", "-", s.strip())
+
+    problems: list[str] = []
+    files = sorted(ROOT.glob("README*.md"))
+    if not files:
+        return False, "no README*.md found"
+    for f in files:
+        text = f.read_text(encoding="utf-8", errors="replace")
+        headings = {slug(m.group(1))
+                    for m in re.finditer(r"^#{1,6}\s+(.*)$", text, re.M)}
+        anchors = set(re.findall(r"\]\(#([^)]+)\)", text))
+        for a in sorted(anchors):
+            if a not in headings:
+                problems.append(f"{f.name}: #{a} has no matching heading")
+    if problems:
+        return False, "; ".join(problems)
+    return True, f"{len(files)} READMEs, all in-page anchors resolve"
+
+
 # ------------------------------------------------------------------- the runner
 
 def run_all() -> list[tuple[str, bool, str]]:
