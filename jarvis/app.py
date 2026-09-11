@@ -655,6 +655,73 @@ BACKEND_INSTRUCTIONS = (
 ESCALATION_HEADROOM_USD = 0.05
 
 
+# The LIVE prompt: how the conversation sounds, and when to involve the backend.
+#
+# Kept as a constant rather than inline so it can be asserted directly - the
+# structure below is not decorative. The GPT-Live docs publish a recommended
+# shape for `session.instructions` with required policy labels, and are explicit
+# that long procedures belong in the BACKEND prompt instead, because the live
+# model has a small context window. BACKEND_INSTRUCTIONS is that other half.
+#
+# Two things here are deliberate and warned about in the docs:
+#   * "Keep listening while the user pauses to think" is the documented control
+#     for slow or paused speech. Without it a thinking pause reads as the end of
+#     a turn, which punishes anyone who does not speak in one smooth run.
+#   * There is NO blanket "never speak while the user is speaking" rule. The docs
+#     warn it conflicts with the backchannel policy and suppresses the brief
+#     listening sounds that make a conversation feel human.
+LIVE_INSTRUCTIONS = (
+    "You are Jarvis, a calm, friendly voice assistant on the user's Windows PC.\n"
+    "Speak warmly and naturally, at an unhurried pace. Be clear and direct, not "
+    "overly cheerful. Keep replies to a sentence or two.\n"
+    "If the user is frustrated, acknowledge it briefly and focus on the next "
+    "helpful step.\n"
+    "\n"
+    "Keep listening while the user pauses to think. Do not treat a cough, music, "
+    "or nearby conversation as a new request.\n"
+    "\n"
+    "Backchannel policy: Use moderate backchannels. Acknowledge naturally without "
+    "competing with the main response.\n"
+    "\n"
+    "Interruption policy: Stop speaking when the user interrupts. Listen to what "
+    "they say.\n"
+    "\n"
+    "Delegation policy:\n"
+    "Backend tools:\n"
+    "- Current information: search the web for anything needing up-to-date facts.\n"
+    "- This computer: find and open approved apps and folders, open approved links, "
+    "read and search files, set the volume, control media, and type or click in a "
+    "window the user has approved.\n"
+    "\n"
+    "Delegate to the backend when:\n"
+    "- The request needs current information, or real work on this computer.\n"
+    "- A correction changes work already requested.\n"
+    "\n"
+    "Do not delegate to the backend when:\n"
+    "- You can answer from the conversation.\n"
+    "- You need a brief clarification first.\n"
+    "\n"
+    "Delegate before giving an answer that depends on backend work. Do not guess "
+    "the result while waiting.\n"
+    "Never claim something was done on the user's computer unless the backend "
+    "reported it."
+)
+
+
+# The opening line, written to the documented recipe for a greeting: the greeting
+# itself, its language, and an explicit instruction to speak first and then listen
+# ("Greet before the caller speaks"). Naming the language matters because the docs
+# say not to infer it from a name or location.
+#
+# Kept separate from LIVE_INSTRUCTIONS so it can be overridden alone, and so the
+# startup instructions the docs say to preserve are genuinely preserved.
+GREETING_TEXT = (
+    "Greet the user right now, before they have spoken, in English and in one "
+    "short sentence - something like \"Hey, what's up?\". Speak first without "
+    "waiting for them, then stop and listen."
+)
+
+
 class AssistantSession:
     """A GPT-Live conversation with delegation, with real barge-in.
 
@@ -755,6 +822,16 @@ class AssistantSession:
         self._monitor = threading.Thread(target=self._monitor_output, name="assistant-mon",
                                          daemon=True)
         self._monitor.start()
+
+        # The documented greeting. Sent only now, with capture already running,
+        # because the docs require input audio to keep flowing - including the
+        # silence before the caller speaks - for the greeting to be spoken at all.
+        #
+        # Off the critical path on purpose: this is best-effort, and a greeting
+        # that is not acknowledged must never leave the assistant unusable.
+        if config.get("greeting_enabled", True):
+            threading.Thread(target=self._greet, name="assistant-greet",
+                             daemon=True).start()
         backend = self._delegation()["responses"]["model"]
         self.app.overlay.set_state(
             state="listening", transcript="", detail=f"listening · backend {backend}",
@@ -762,13 +839,28 @@ class AssistantSession:
         self.app.overlay.show()
 
     def _instructions(self) -> str:
-        return (
-            "You are the user's voice assistant on their Windows PC. Keep replies "
-            "very short - a sentence or two. Delegate requests that need current "
-            "information or real work to the backend. Never claim you have done "
-            "something on the user's computer unless the backend reported it. If "
-            "a request is ambiguous, ask one short question."
-        )
+        """The live prompt, with an optional user override."""
+        override = (config.get("live_instructions") or "").strip()
+        return override or LIVE_INSTRUCTIONS
+
+    def _greet(self) -> None:
+        """Ask for the opening line, off the audio path.
+
+        Best-effort by design. The docs are explicit that this *requests* a
+        greeting without guaranteeing wording or uninterrupted playback, and that
+        the API emits no opening-completed event - so a greeting that does not
+        land is logged and dropped rather than raised as an error the user cannot
+        act on.
+        """
+        text = (config.get("greeting_text") or "").strip() or GREETING_TEXT
+        try:
+            ok = RUNNER.run(self.session.greet(text), timeout=15)
+        except Exception as exc:
+            # No manual redaction: logsetup's RedactionFilter runs at the handler.
+            log.info("greeting: not sent (%s)", exc)
+            return
+        log.info("greeting: %s", "requested" if ok else
+                 "not acknowledged; the assistant still works")
 
     # ------------------------------------------------------------------ audio
     def _on_mic_chunk(self, pcm: bytes) -> None:

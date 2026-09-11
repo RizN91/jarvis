@@ -213,6 +213,13 @@ class LiveSession:
         self.last_error: Optional[dict] = None
         self.backend_usage: list[dict] = []
 
+        # Acknowledgment tracking for session.instructions.append. The documented
+        # greeting requires waiting for `session.instructions.appended` and
+        # treating a rejection as a failure, so the command's client id is
+        # resolved back to whoever is waiting on it.
+        self._append_acks: dict[str, asyncio.Event] = {}
+        self._append_rejected: dict[str, bool] = {}
+
         self._ws: Any = None
         self._reader: Optional[asyncio.Task] = None
         self._pending_byte = b""            # carries an odd trailing byte
@@ -336,6 +343,49 @@ class LiveSession:
                           "event_id": event_id, "delegation_id": None,
                           "content": content})
 
+    async def greet(self, text: str, event_id: str = "greet_1",
+                    timeout: float = 8.0) -> bool:
+        """Ask the model to open the conversation, the documented way.
+
+        "Greet before the caller speaks" prescribes three steps, and all three
+        matter:
+          1. one fresh `session.instructions.append` with `delegation_id: null`,
+             carrying the greeting and an explicit instruction to speak first;
+          2. wait for `session.instructions.appended`, matched by client id, and
+             treat a rejection as a failure;
+          3. keep input audio running, then nudge it to begin with a short
+             `session.commentary.append`.
+
+        Sending the instruction and immediately asking for a response does not
+        work - the injection has not landed yet - which is why the wait exists.
+
+        Returns True if the instruction was ACKNOWLEDGED. The docs are explicit
+        that this requests a greeting without guaranteeing wording or playback,
+        and that the API emits no opening-completed event, so True means
+        "accepted", never "the caller heard it".
+        """
+        ack = asyncio.Event()
+        self._append_acks[event_id] = ack
+        try:
+            await self.append_instructions(text, event_id)
+            try:
+                await asyncio.wait_for(ack.wait(), timeout)
+            except asyncio.TimeoutError:
+                log.warning("greeting: no acknowledgment within %.1fs", timeout)
+                return False
+            if self._append_rejected.get(event_id):
+                log.warning("greeting: the instruction was rejected")
+                return False
+            await self._send({"type": "session.commentary.append",
+                              "event_id": f"{event_id}_go",
+                              "delegation_id": None,
+                              "content": "Begin the conversation now, "
+                                         "following the instructions provided."})
+            return True
+        finally:
+            self._append_acks.pop(event_id, None)
+            self._append_rejected.pop(event_id, None)
+
     async def update_session(self, patch: dict) -> None:
         await self._send({"type": "session.update", "session": patch})
 
@@ -387,6 +437,15 @@ class LiveSession:
             self.output_transcript.add(event.get("delta", ""),
                                        event.get("start_ms", 0.0),
                                        event.get("end_ms", 0.0))
+        elif etype == "session.instructions.appended":
+            # The documented acknowledgment for an instruction append. It carries
+            # the client id of the command it answers, so a rejected injection is
+            # visible instead of silently doing nothing.
+            cid = str(event.get("client_event_id") or event.get("event_id") or "")
+            self._append_rejected[cid] = bool(event.get("error"))
+            waiting = self._append_acks.get(cid)
+            if waiting is not None:
+                waiting.set()
         elif etype == "session.output_audio.delta":
             if self.on_audio and not self.config.dictation:
                 try:

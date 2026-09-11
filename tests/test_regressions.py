@@ -1060,6 +1060,157 @@ def test_the_speaker_device_is_resolved_not_passed_raw():
 
 
 # ==========================================================================
+# 15. Best practice against the published GPT-Live guidance
+#
+# The live prompt is not free-form: the docs publish a recommended structure for
+# `session.instructions` with required policy labels, and warn specifically that
+# copying every optional control makes the prompt longer and "can introduce
+# conflicting instructions". The voice table is likewise fixed. Both are the kind
+# of thing that rots silently, so they are asserted.
+# ==========================================================================
+
+def test_the_live_prompt_follows_the_documented_structure():
+    from jarvis.app import LIVE_INSTRUCTIONS
+    prompt = LIVE_INSTRUCTIONS
+
+    for label in ("Backchannel policy:", "Interruption policy:",
+                  "Delegation policy:", "Backend tools:",
+                  "Delegate to the backend when:",
+                  "Do not delegate to the backend when:"):
+        check(label in prompt, f"the live prompt keeps the documented label {label!r}")
+
+    # The two rules the docs add on top of the template.
+    check("Delegate before giving an answer that depends on backend work" in prompt,
+          "it instructs delegation BEFORE answering, so the model does not guess")
+    check("Do not guess the result while waiting" in prompt,
+          "and does not guess while waiting for the backend")
+
+    # Tone and pace: the announcement lists this as a headline capability, so a
+    # prompt with no personality direction is leaving it on the table.
+    low = prompt.lower()
+    check("pace" in low and "warmly" in low,
+          "it sets tone and pace, as the docs' Personality section requires")
+    check("frustrated" in low,
+          "and says what to do when the user is frustrated")
+
+    # The documented warning: a blanket rule suppresses backchannels.
+    check("never speak while the user is speaking" not in low
+          and "do not speak while the user" not in low,
+          "it does NOT add the blanket 'never speak while the user speaks' rule "
+          "the docs warn conflicts with the backchannel policy")
+
+
+def test_the_live_prompt_keeps_listening_through_thinking_pauses():
+    """The documented control for slow or paused speech.
+
+    Exactly one short line, and the one that matters most to anyone who pauses
+    mid-sentence: without it a thinking pause reads as the end of a turn.
+    """
+    from jarvis.app import LIVE_INSTRUCTIONS
+    check("Keep listening while the user pauses to think" in LIVE_INSTRUCTIONS,
+          "the prompt keeps listening while the user pauses to think")
+    check("cough, music, or nearby conversation" in LIVE_INSTRUCTIONS,
+          "and does not treat unrelated noise as a new request")
+
+
+def test_the_live_prompt_stays_short():
+    """The docs: the live model has a small context window."""
+    from jarvis.app import LIVE_INSTRUCTIONS
+    check(len(LIVE_INSTRUCTIONS) < 1800,
+          "the live prompt stays short, as the small context window requires",
+          f"{len(LIVE_INSTRUCTIONS)} chars")
+
+
+def test_the_voice_table_matches_the_documented_set():
+    """The published voices, exactly - ids and their descriptions."""
+    from jarvis.engines import live
+    documented = {
+        "quartz": ("Australian", "Feminine", "Generated"),
+        "ripple": ("Australian", "Masculine", "Natural"),
+        "vesper": ("British", "Masculine", "Natural"),
+        "willow": ("Irish", "Feminine", "Natural"),
+        "stone": ("Irish", "Masculine", "Natural"),
+        "gleam": ("North American", "Feminine", "Natural"),
+        "meridian": ("North American", "Masculine", "Natural"),
+        "bossa": ("Brazilian", "Feminine", "Natural"),
+        "tempo": ("Brazilian", "Masculine", "Natural"),
+        "beacon": ("Filipino", "Masculine", "Generated"),
+        "delta": ("Southern U.S.", "Feminine", "Generated"),
+        "cinder": ("Southern U.S.", "Masculine", "Generated"),
+    }
+    have = {v["id"]: (v["region"], v["presentation"], v["source"]) for v in live.VOICES}
+    for vid, expected in documented.items():
+        check(vid in have, f"voice {vid!r} is offered", f"have {sorted(have)}")
+        if vid in have:
+            check(have[vid] == expected,
+                  f"voice {vid!r} matches the documented description", f"{have[vid]}")
+    check(set(have) - set(documented) <= {"marin"},
+          "no voice is invented beyond the documented set (plus the default)",
+          f"{sorted(set(have) - set(documented))}")
+    check(live.is_known_voice("marin"),
+          "the shipped default voice is itself a known voice")
+
+
+def test_the_greeting_follows_the_documented_recipe():
+    """Free coverage for the greeting's wiring.
+
+    The live behaviour is proven by tests/verify_greeting.py (billable). These
+    assertions cost nothing and catch the specific mistakes that were actually
+    made while building it, both of which the API rejected:
+
+      * `delegation_id` is required on BOTH the instruction append and the
+        commentary append - omitting it fails with missing_required_parameter;
+      * the acknowledgment for the append is `session.instructions.appended`,
+        matched by client id, and a rejection has to be visible.
+    """
+    import inspect
+    from jarvis.engines import live as live_mod
+
+    src = inspect.getsource(live_mod.LiveSession)
+
+    check("session.commentary.append" in src,
+          "it nudges the model with the documented commentary append")
+    check(src.count('"delegation_id": None') >= 2,
+          "both appends send delegation_id, which the API requires",
+          f"count={src.count('delegation_id')}")
+    check("session.instructions.appended" in src,
+          "it waits for the documented acknowledgment event")
+    check("session.instructions.append" in src, "and sends the documented command")
+
+    # The greeting must be requested, not assumed: it is a request that the docs
+    # say does not guarantee wording, so it cannot be treated as an error when it
+    # does not land.
+    from jarvis.app import GREETING_TEXT
+    check("Greet the user right now" in GREETING_TEXT,
+          "the greeting text asks it to speak first")
+    check("English" in GREETING_TEXT,
+          "and names the language, instead of inferring it from the caller")
+    check("then stop and listen" in GREETING_TEXT,
+          "and tells it to pause and listen afterwards")
+
+    greet_src = inspect.getsource(live_mod.LiveSession.greet)
+    check("acknowledged" in greet_src.lower(),
+          "its docstring keeps the caveat that True means accepted, not heard")
+
+
+def test_the_greeting_cannot_break_the_assistant():
+    """The greeting is best-effort and must never be on the critical path."""
+    import inspect
+    from jarvis.app import AssistantSession
+
+    src = inspect.getsource(AssistantSession)
+    check("greeting_enabled" in src, "the greeting can be switched off")
+    check("_greet" in src and "Thread(target=self._greet" in src,
+          "it runs on its own thread, so a slow or failed greeting cannot block "
+          "the assistant from opening")
+
+    greet = inspect.getsource(AssistantSession._greet)
+    check("except Exception" in greet,
+          "a greeting failure is caught, not raised")
+    check("RUNNER.run" in greet, "and it still goes through the shared runner")
+
+
+# ==========================================================================
 
 TESTS = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
 
