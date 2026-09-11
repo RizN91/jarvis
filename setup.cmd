@@ -30,6 +30,16 @@ rem  The lockfile was validated on CPython 3.11; an exact 3.11 is preferred,
 rem  but any 64-bit 3.11 or newer is accepted (with a printed note otherwise).
 if exist "%VENV%\Scripts\python.exe" goto :venv_exists
 set "BASE="
+
+rem  install.ps1 (the one-command installer) validates an interpreter itself and
+rem  passes its full path here as JARVIS_PYTHON_BASE, so the two halves agree on
+rem  which Python the venv is built from. It is re-validated here regardless.
+if defined JARVIS_PYTHON_BASE (
+  "%JARVIS_PYTHON_BASE%" -c "import sys; sys.exit(0 if sys.version_info[:2] >= (3,11) and sys.maxsize > 2**32 else 1)" >nul 2>nul
+  if not errorlevel 1 set "BASE="%JARVIS_PYTHON_BASE%""
+)
+if defined BASE goto :have_base
+
 where py >nul 2>nul
 if errorlevel 1 goto :try_python
 py -3.11 -c "import sys; sys.exit(0 if sys.version_info[:2] == (3,11) and sys.maxsize > 2**32 else 1)" >nul 2>nul
@@ -76,12 +86,15 @@ echo [4/4] installing dependencies from requirements.lock.txt
 "%VPY%" -m pip install -r "%ROOT%requirements.lock.txt"
 if errorlevel 1 goto :pip_failed
 
-rem ---- 4. smoke check: does the package actually import? ------------------
-echo       smoke check: python -c "import jarvis"
+rem ---- 4. smoke check: the package imports AND the entry point answers ----
+echo       smoke check: python -c "import jarvis" (and its heavy dependencies)
 "%VPY%" -c "import jarvis" >nul 2>nul
 if errorlevel 1 goto :import_failed
 "%VPY%" -c "import jarvis, sounddevice, webview, sherpa_onnx; print('      jarvis %s imports OK' % jarvis.__version__)"
 if errorlevel 1 goto :import_failed
+echo       smoke check: python -m jarvis --version must print "Jarvis 1.0.0"
+"%VPY%" -c "import subprocess, sys; r = subprocess.run([sys.executable, '-m', 'jarvis', '--version'], capture_output=True, text=True); line = (r.stdout or '').strip(); print('      ' + (line or '(no output)')); sys.exit(0 if line == 'Jarvis 1.0.0' else 1)"
+if errorlevel 1 goto :version_failed
 
 echo.
 echo ===========================================================================
@@ -130,4 +143,12 @@ exit /b 1
 echo.
 echo   FAILED - the dependencies installed but "import jarvis" still fails.
 echo   Run run-console.cmd to see the real Python traceback.
+exit /b 1
+
+:version_failed
+echo.
+echo   FAILED - "python -m jarvis --version" did not print "Jarvis 1.0.0".
+echo   The package imported, but its command-line entry point is not behaving.
+echo   See exactly what it prints with:
+echo       "%VPY%" -m jarvis --version
 exit /b 1

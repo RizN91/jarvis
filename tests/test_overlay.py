@@ -84,12 +84,12 @@ def main() -> int:
             state=state,
             # The exact sentence in mockup.png, so these previews can be held
             # side by side with it.
-            transcript="open my supplier invoices documents and summarise the latest file"
+            transcript="open my quarterly report documents and summarise the latest file"
             if state in ("dictating", "listening") else "",
-            detail={"listening": "Controlling your PC", "working": "Opening Supplier Invoices…",
+            detail={"listening": "Controlling your PC", "working": "Opening Quarterly Report…",
                     "approval": "Send email to Zoho?",
                     "error": "rate limit; nothing charged twice"}.get(state, ""),
-            actions=["Opening Supplier Invoices…"] if state in ("listening", "working") else [],
+            actions=["Opening Quarterly Report…"] if state in ("listening", "working") else [],
             esc_hint="ESC to stop" if state in ("dictating", "listening", "working") else "",
             session_seconds=42.0 if state in ("listening", "dictating") else 0.0,
             spend_usd=0.0183 if state in ("listening", "working") else 0.0,
@@ -116,7 +116,7 @@ def main() -> int:
 
     # ---- performance ---------------------------------------------------
     st = ov.PillState(state="listening", transcript="measuring per-frame cost",
-                      detail="Opening Supplier Invoices…", actions=["Opening Supplier Invoices…"],
+                      detail="Opening Quarterly Report…", actions=["Opening Quarterly Report…"],
                       esc_hint="ESC to stop", session_seconds=12.0, spend_usd=0.004)
     # Warm the caches first, then measure steady-state frames.
     for _ in range(3):
@@ -150,7 +150,7 @@ def main() -> int:
 
     before_fg = int(user32.GetForegroundWindow() or 0)
     pill.set_state(state="listening", transcript="Jarvis overlay is on screen",
-                   detail="Opening Supplier Invoices…", actions=["Opening Supplier Invoices…"],
+                   detail="Opening Quarterly Report…", actions=["Opening Quarterly Report…"],
                    esc_hint="ESC to stop", session_seconds=3.0)
     # start() runs the animation thread. The capture below must exercise the
     # REAL animated path, not a static frame - the island grows in, and a
@@ -166,24 +166,40 @@ def main() -> int:
     shot = os.path.join(OUT, "desktop_with_pill.png")
     try:
         from PIL import ImageGrab
-        img = ImageGrab.grab()
+        # all_screens=True matters on a multi-monitor desktop. A plain grab()
+        # returns ONLY the primary monitor, while the pill's window rect is in
+        # virtual-desktop coordinates — so when the pill lands on a secondary
+        # display the crop below comes out inverted ("right is less than left").
+        img = ImageGrab.grab(all_screens=True)
         img.save(shot)
         # Crop the island region so it can be inspected closely. Derived from
         # the pill's OWN size, not a hard-coded 1300x260: the island is a
         # fraction of the old pill's size and the fixed crop captured the
         # desktop behind it instead.
         w, h = img.size
+        # Convert virtual-desktop coordinates into image coordinates. The virtual
+        # screen can start left of / above the primary monitor, so this offset is
+        # not always zero.
+        vx = user32.GetSystemMetrics(76)   # SM_XVIRTUALSCREEN
+        vy = user32.GetSystemMetrics(77)   # SM_YVIRTUALSCREEN
         # ov.user32 / ov.RECT, not this file's own handle: ctypes.WinDLL()
         # returns a NEW object each call, so the argtypes overlay.py declares
         # do not apply here and the RECT comes back as garbage.
         rect = ov.RECT()
         ov.user32.GetWindowRect(wt.HWND(pill._hwnd), ctypes.byref(rect))
         pad = 40
-        crop = img.crop((max(0, rect.left - pad), max(0, rect.top - pad),
-                         min(w, rect.right + pad), min(h, rect.bottom + pad)))
+        box = (max(0, rect.left - vx - pad), max(0, rect.top - vy - pad),
+               min(w, rect.right - vx + pad), min(h, rect.bottom - vy + pad))
+        # Never hand PIL an inverted box (older versions raise instead of
+        # returning an empty image).
+        if box[2] <= box[0] or box[3] <= box[1]:
+            raise AssertionError(
+                f"pill rect {box} is outside the captured area {w}x{h} "
+                f"(virtual origin {vx},{vy})")
+        crop = img.crop(box)
         crop.save(os.path.join(OUT, "desktop_pill_crop.png"))
         record("captured the live desktop with the pill visible", True,
-               f"{shot} ({w}x{h})")
+               f"{shot} ({w}x{h}, pill at {rect.left},{rect.top})")
     except Exception as exc:
         record("captured the live desktop with the pill visible", False, str(exc))
 
@@ -209,15 +225,15 @@ def main() -> int:
            f"drawn width={(box[2] - box[0]) if box else 0}px of {idle.width}px")
 
     talk = ov.Overlay(fps=60)
-    talk_state = ov.PillState(state="dictating", transcript="open my supplier invoices")
+    talk_state = ov.PillState(state="dictating", transcript="open my quarterly report")
     for _ in range(150):
         talk._advance(talk_state, 1.0 / 60.0)
     record("the LEFT wing opens for what the user said",
            talk._left > 120, f"left={talk._left:.0f}px")
 
     work = ov.Overlay(fps=60)
-    work_state = ov.PillState(state="working", detail="Opening Supplier Invoices",
-                              actions=["Opening Supplier Invoices"])
+    work_state = ov.PillState(state="working", detail="Opening Quarterly Report",
+                              actions=["Opening Quarterly Report"])
     for _ in range(150):
         work._advance(work_state, 1.0 / 60.0)
     record("the RIGHT wing opens for what the app is doing, and the left stays shut",

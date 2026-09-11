@@ -33,7 +33,7 @@ from jarvis.win import target as tgt  # noqa: E402
 from tests.harness_window import EditHarness  # noqa: E402
 
 SAMPLE = (
-    "Jarvis pacing probe 0123456789 - supplier invoices, Codex, Claude, "
+    "Jarvis pacing probe 0123456789 - quarterly report, Codex, Claude, "
     "Supabase, TypeScript, npm, WooCommerce, Zoho, Kubernetes, Postgres."
 )
 UNICODE_SAMPLE = (

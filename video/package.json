@@ -1,0 +1,27 @@
+{
+  "name": "jarvis-demo-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Jarvis demo video: built with Remotion from real app captures.",
+  "scripts": {
+    "assets": "python tools/make_audio.py && python tools/make_pill.py && python tools/make_shots.py",
+    "studio": "remotion studio",
+    "render": "remotion render JarvisDemo out/jarvis-demo.mp4",
+    "render:preview": "remotion render JarvisPreview out/jarvis-preview.webp --image-format=webp",
+    "still": "remotion still JarvisDemo out/poster.png --frame=30"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.6.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
+  }
+}

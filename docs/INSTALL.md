@@ -46,6 +46,32 @@ No administrator rights are required for any step below. Nothing installs to
 
 ## 2. Running from source
 
+### One command (Windows, recommended)
+
+The quickest path. Paste this into PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/RizN91/jarvis/main/install.ps1 | iex
+```
+
+`install.ps1` finds a 64-bit Python 3.11+, installs Jarvis into
+`%LOCALAPPDATA%\Jarvis\app` (cloning with `git`, or downloading the release zip
+if `git` is absent), builds `.venv` by calling `setup.cmd`, and adds a Start
+Menu shortcut. It never elevates, never installs Python for you, and never
+changes an execution policy or a Defender setting.
+
+Preview it without changing anything — this runs the exact same script through
+a script block, so you can read the plan before trusting it:
+
+```powershell
+$s = irm https://raw.githubusercontent.com/RizN91/jarvis/main/install.ps1
+& ([scriptblock]::Create($s)) -DryRun
+```
+
+Optional parameters: `-Dir <path>` (install somewhere else), `-Version <tag>`
+(pin a release), `-Desktop` (also add a Desktop shortcut). To remove it again
+see [section 6](#6-uninstalling).
+
 ### 2.1 One-time setup
 
 ```bat
@@ -183,6 +209,20 @@ Raw audio is **not** stored by default (`store_raw_audio: false`,
 ---
 
 ## 6. Uninstalling
+
+If you installed with `install.ps1`, it has its own uninstaller:
+
+```powershell
+powershell -File install.ps1 -Uninstall -DryRun   # list what would be removed
+powershell -File install.ps1 -Uninstall           # then actually remove it
+```
+
+It removes the app folder, its `.venv` and the shortcuts. Your data folder
+`%LOCALAPPDATA%\Jarvis` and the stored API key are listed in the plan too, but
+they are **only** removed after you type an explicit `DELETE` confirmation —
+never silently, and never by a dry run.
+
+The `uninstall.cmd` path below does the equivalent from the checkout.
 
 Preview exactly what would be removed, deleting nothing:
 

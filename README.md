@@ -15,10 +15,24 @@ No subscription. Bring your own OpenAI key. **From $0.0045 per minute.**
 [![License: MIT](https://img.shields.io/badge/License-MIT-3b82f6.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3b82f6.svg)](pyproject.toml)
 [![Platform: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-3b82f6.svg)](#platform-support)
-[![Tests: 480+ passing](https://img.shields.io/badge/tests-480%2B%20passing-22c55e.svg)](CONTRIBUTING.md)
+[![Tests: 480+ passing](https://img.shields.io/badge/tests-489%20passing-22c55e.svg)](CONTRIBUTING.md)
 [![Languages: 15](https://img.shields.io/badge/languages-15-8b5cf6.svg)](#speaks-your-language)
 
+**Read this in:** English · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português (BR)](README.pt-BR.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
+
 </div>
+
+---
+
+## Watch it work
+
+[![Jarvis — the floating pill, and real dictation landing in Notepad](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
+
+*A real session, not a mockup.* The pill and the text arriving in Notepad are the
+shipped code running — the clip is generated from the app itself, so it cannot
+quietly drift from what you download.
+
+**[▶ Watch the 81-second demo with sound](docs/media/jarvis-demo.mp4)** · 1080p, 11 MB
 
 ---
 
@@ -82,6 +96,24 @@ before you rely on it.</sub>
 ## Install
 
 **Windows 10 or 11.** You need Python 3.11+ and an OpenAI API key.
+
+One line in PowerShell is the whole install:
+
+```powershell
+irm https://raw.githubusercontent.com/RizN91/jarvis/main/install.ps1 | iex
+```
+
+It finds your Python, clones Jarvis into `%LOCALAPPDATA%\Jarvis\app`, builds the
+virtual environment, installs the pinned dependencies, runs a smoke check, and
+adds a Start Menu shortcut.
+
+It is a per-user install: it never elevates, never installs Python for you, and
+never changes your execution policy, your Defender settings or your global
+Python. `-DryRun` prints exactly what it would do and changes nothing;
+`-Uninstall` removes it again, and will not touch your data folder without a
+typed confirmation.
+
+**Or by hand** — the same three commands the script runs:
 
 ```bat
 git clone https://github.com/RizN91/jarvis.git

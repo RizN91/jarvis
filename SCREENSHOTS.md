@@ -1,6 +1,20 @@
 # Screenshots
 
-Every image here is a **real capture of the running application**, taken through
+## The demo video
+
+[![Jarvis — the floating pill, and real dictation landing in Notepad](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
+
+**[▶ Watch the 81-second demo with sound](docs/media/jarvis-demo.mp4)** — 1080p, 11 MB.
+
+It is assembled from captures of the real application rather than drawn by hand:
+the pill is rendered by `jarvis/win/overlay.py`, and the dictation footage is a
+genuine session in which the shipped `insert_text()` typed into Notepad while
+the shipped overlay drew above it. `video/README.md` explains how to rebuild it,
+and why every take is verified before it is accepted.
+
+---
+
+Every image below is a **real capture of the running application**, taken through
 `CoreWebView2.CapturePreviewAsync` (the app's own surface) or the app's native
 pill renderer. None of them is a mockup, and none is a grabbed desktop — so no
 unrelated window, taskbar or wallpaper can appear in them.

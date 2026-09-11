@@ -31,6 +31,7 @@ from __future__ import annotations
 import ast
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -46,7 +47,12 @@ use_utf8_stdout()
 CMD_SCRIPTS = ["run.cmd", "run-console.cmd", "setup.cmd", "package.cmd",
                "uninstall.cmd"]
 
-REQUIRED_FILES = CMD_SCRIPTS + [
+# The one-command installers. install.ps1 is the Windows path; install.sh is
+# its honest POSIX counterpart.
+PS_SCRIPTS = ["install.ps1"]
+SH_SCRIPTS = ["install.sh"]
+
+REQUIRED_FILES = CMD_SCRIPTS + PS_SCRIPTS + SH_SCRIPTS + [
     "requirements.txt",
     "requirements.lock.txt",
     "pyproject.toml",
@@ -118,6 +124,20 @@ def local_app_data() -> Path | None:
     base = os.environ.get("LOCALAPPDATA")
     return Path(base) / "Jarvis" if base else None
 
+
+def powershell() -> str | None:
+    """Path to Windows PowerShell, or None when it is not available."""
+    for name in ("powershell", "powershell.exe"):
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
+# Byte values, spelled without escapes so a CRLF file cannot mangle them.
+CR = 13
+LF = 10
+CRLF = bytes([CR, LF])
 
 # ---------------------------------------------------------------------- checks
 
@@ -494,6 +514,233 @@ def check_setup_sh():
         return False, "; ".join(problems)
     return True, ("checks the interpreter, names Windows, installs nothing, "
                   "points at INSTALL.md, exits 1")
+
+
+# Constructs that must never appear in the Windows one-command installer.
+# NOTE: the word "Defender" IS allowed - the banner promises not to touch it -
+# so it is deliberately not in this list. The real rule is: never *change* it.
+PS_BANNED = [
+    "set-executionpolicy",
+    "get-executionpolicy",
+    "add-mppreference",
+    "set-mppreference",
+    "remove-mppreference",
+    "mpcmdrun",
+    "start-process",
+    "runas",
+    "winget install",
+    "choco install",
+    "msiexec",
+]
+
+
+@check("install.ps1 is a genuine one-command install with no unsafe construct")
+def check_install_ps1():
+    p = ROOT / "install.ps1"
+    if not p.is_file():
+        return False, "install.ps1 is missing"
+    text = read(p)
+    low = text.lower()
+    problems = []
+
+    for needle in [
+        "irm https://raw.githubusercontent.com/rizn91/jarvis/main/install.ps1 | iex",
+        "$env:localappdata",
+        "'py'",                       # the py launcher is tried at all
+        "-3.11", "-3.12",             # exact new launchers before bare py -3
+        "'python'",                   # final fallback
+        "https://www.python.org/downloads/",
+        "git clone",
+        "archive/refs",               # release-zip fallback when git is absent
+        "git -c",                     # updates an existing checkout with pull
+        "setup.cmd",                  # reuses the tested install path
+        "jarvis_python_base",         # passes the chosen Python to setup.cmd
+        "wscript.shell",              # creates the shortcut
+        "-m jarvis",                  # the shortcut runs the tray app
+        "dryrun",                     # -DryRun exists
+        "uninstall",                  # -Uninstall exists
+        "would remove",               # uninstall has a dry-run listing
+        "remove-item",                # uninstall can actually remove things
+    ]:
+        if needle not in low:
+            problems.append(f"install.ps1 never mentions {needle!r}")
+
+    for bad in PS_BANNED:
+        if bad in low:
+            problems.append(f"install.ps1 contains the banned construct {bad!r}")
+
+    if "$psscriptroot" in low:
+        problems.append("install.ps1 uses $PSScriptRoot, so `irm | iex` would break")
+
+    # A recursive delete is only acceptable against a script variable, never
+    # against a literal drive path.
+    for lineno, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip().lower()
+        if "remove-item" in line and "-recurse" in line:
+            if "$" not in line:
+                problems.append(f"line {lineno} recursively deletes a literal path: {raw.strip()}")
+            elif re.search(r"[a-z]:\\", line):
+                problems.append(f"line {lineno} recursively deletes a fixed drive path: {raw.strip()}")
+
+    if problems:
+        return False, "; ".join(problems)
+    return True, ("one-line command documented, Python detection, git + zip "
+                  "fallbacks, setup.cmd reused, shortcut, -DryRun and -Uninstall")
+
+
+@check("install.ps1 is CRLF and install.sh is LF")
+def check_installer_line_endings():
+    problems = []
+    ps = (ROOT / "install.ps1").read_bytes()
+    if CRLF not in ps:
+        problems.append("install.ps1 has no CRLF at all")
+    lone = sum(1 for i, c in enumerate(ps)
+               if c == LF and (i == 0 or ps[i - 1] != CR))
+    if lone:
+        problems.append(f"install.ps1 has {lone} bare LF (must be CRLF-only)")
+    sh = (ROOT / "install.sh").read_bytes()
+    if CRLF in sh:
+        problems.append("install.sh contains CRLF (POSIX scripts must be LF)")
+    if problems:
+        return False, "; ".join(problems)
+    return True, "install.ps1 is CRLF-only, install.sh is LF-only"
+
+@check("install.ps1 -DryRun exits 0 and creates nothing")
+def check_install_ps1_dryrun():
+    ps = powershell()
+    if not ps:
+        return True, "SKIPPED (no powershell on PATH)"
+
+    app_dir = local_app_data()
+    if app_dir is not None:
+        app_dir = app_dir / "app"
+    existed_before = bool(app_dir and app_dir.exists())
+
+    proc = run([ps, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+                str(ROOT / "install.ps1"), "-DryRun"], timeout=120)
+    out = (proc.stdout or "") + (proc.stderr or "")
+    low = out.lower()
+
+    problems = []
+    if proc.returncode != 0:
+        problems.append(f"exit code {proc.returncode}")
+
+    for needle in ["dry run", "would run", "would create"]:
+        if needle not in low:
+            problems.append(f"the dry run output never mentions {needle!r}")
+
+    if app_dir is not None and str(app_dir).lower() not in low:
+        problems.append("the dry run never names the default install directory")
+
+    # A dry run must never claim to have done the work.
+    for lie in ["cloned with git", "setup.cmd finished", "[ok]  installed"]:
+        if lie in low:
+            problems.append(f"the dry run reported work it did not do: {lie!r}")
+
+    if app_dir is not None and not existed_before and app_dir.exists():
+        problems.append(f"the dry run CREATED {app_dir}")
+
+    if problems:
+        return False, "; ".join(problems)
+    return True, "exit=0, printed the plan, created no app directory"
+
+
+@check("install.ps1 -Uninstall -DryRun lists the plan and deletes nothing")
+def check_install_ps1_uninstall_dryrun():
+    ps = powershell()
+    if not ps:
+        return True, "SKIPPED (no powershell on PATH)"
+
+    data = local_app_data()
+    if data is None:
+        return True, "SKIPPED (no LOCALAPPDATA)"
+
+    data.mkdir(parents=True, exist_ok=True)
+    marker = data / "_smoke_test_marker_ps1.txt"
+    marker.write_text("if this file is gone, install.ps1 -Uninstall -DryRun "
+                      "was destructive\n", encoding="utf-8")
+
+    problems: list[str] = []
+    try:
+        proc = run([ps, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+                    str(ROOT / "install.ps1"), "-Uninstall", "-DryRun"],
+                   timeout=120)
+        out = (proc.stdout or "") + (proc.stderr or "")
+        low = out.lower()
+
+        if proc.returncode != 0:
+            problems.append(f"exit code {proc.returncode}")
+        if not marker.exists():
+            problems.append("THE MARKER FILE WAS DELETED - the dry run was destructive")
+        if not data.is_dir():
+            problems.append("the data directory was removed")
+        for needle in ["would remove", ".venv", "jarvis", "openai_api_key",
+                       "dry run"]:
+            if needle not in low:
+                problems.append(f"the plan never mentions {needle!r}")
+        if "removed:" in low:
+            problems.append("the dry run reported a removal it did not make")
+    finally:
+        try:
+            marker.unlink()
+        except OSError:
+            pass
+
+    if problems:
+        return False, "; ".join(problems)
+    return True, "exit=0, full plan printed, marker survived, data dir intact"
+
+
+@check("install.sh refuses without --force, installs nothing, fakes nothing")
+def check_install_sh():
+    p = ROOT / "install.sh"
+    if not p.is_file():
+        return False, "install.sh is missing"
+    bash = shutil.which("bash")
+    if not bash:
+        return True, "SKIPPED (no bash on PATH)"
+
+    probe = ROOT / "_install_sh_probe"
+    problems: list[str] = []
+    try:
+        # 1. no --force: it must refuse and create nothing.
+        proc = run([bash, "install.sh", "--dir", "_install_sh_probe"], timeout=60)
+        out = (proc.stdout or "") + (proc.stderr or "")
+        low = out.lower()
+        if proc.returncode == 0:
+            problems.append("exited 0 without --force (it must refuse)")
+        if "windows" not in low:
+            problems.append("never says Jarvis is Windows-only")
+        if "install.ps1" not in out:
+            problems.append("does not point Windows users at install.ps1")
+        if probe.exists():
+            problems.append("created the target directory even though it refused")
+        for fake in ["successfully installed", "installation complete",
+                     "setup finished"]:
+            if fake in low:
+                problems.append(f"claims success it did not achieve: {fake!r}")
+
+        # 2. --dry-run may exit 0, but must still create nothing.
+        dry = run([bash, "install.sh", "--dry-run", "--dir", "_install_sh_probe"],
+                  timeout=60)
+        dout = (dry.stdout or "") + (dry.stderr or "")
+        dlow = dout.lower()
+        if dry.returncode != 0:
+            problems.append(f"--dry-run exited {dry.returncode}")
+        if "would" not in dlow:
+            problems.append("--dry-run does not describe what it would do")
+        if "cannot run here" not in dlow:
+            problems.append("--dry-run never says the app cannot run here")
+        if probe.exists():
+            problems.append("--dry-run created the target directory")
+    finally:
+        if probe.exists():
+            shutil.rmtree(probe, ignore_errors=True)
+
+    if problems:
+        return False, "; ".join(problems)
+    return True, ("refuses (exit 1) and creates nothing without --force; "
+                  "--dry-run exits 0 and creates nothing; never claims success")
 
 
 # ------------------------------------------------------------------- the runner

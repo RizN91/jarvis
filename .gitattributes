@@ -6,8 +6,14 @@
 *.cmd text eol=crlf
 *.bat text eol=crlf
 
+# The Windows installer (install.ps1) is CRLF like the .cmd files. POSIX shell
+# scripts must stay LF so their shebang keeps working.
+*.ps1 text eol=crlf
+*.sh  text eol=lf
+
 # Never touch these.
 *.png binary
+*.mp4 binary
 *.webp binary
 *.jpg binary
 *.jpeg binary

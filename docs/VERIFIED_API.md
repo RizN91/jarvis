@@ -404,9 +404,9 @@ for literal dictation than the native `gpt-live-1` input transcript.
 `gpt-live-1` native input transcript (`tests/test_live_api.py`):
 ```
 - 7.00s run:  WER vs known first sentence: 46.2%
-  transcript: ' the user voice test. Open my supplier invoices, see the, stop being a documents and summarize the latest file'
+  transcript: ' the user voice test. Open my quarterly report, see the, stop being a documents and summarize the latest file'
 - 22.00s run: WER vs known first sentence: 307.7%
-  transcript: ' the user voice test Open my supplier invoices documents and summarize the latest file. Do not send one thousand two hundred and fifty units to five hundred and fifty units five it or use the path, codex and cloud use to car base and type script Friday. ...'
+  transcript: ' the user voice test Open my quarterly report documents and summarize the latest file. Do not send one thousand two hundred and fifty units to five hundred and fifty units five it or use the path, codex and cloud use to car base and type script Friday. ...'
 ```
 
 Two things are worth calling out:

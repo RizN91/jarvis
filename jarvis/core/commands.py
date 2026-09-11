@@ -98,7 +98,7 @@ def _strip(text: str) -> str:
 def _starts_with(text: str, phrases, longest: bool = True) -> Optional[str]:
     """Return the remainder after a leading phrase, or None.
 
-    Requires a word boundary: "opening the supplier invoice" must NOT match "open".
+    Requires a word boundary: "opening the quarterly report" must NOT match "open".
 
     `longest` picks the most specific verb, which is right for "search the web
     for" over "search for". It is WRONG for "type", where the shortest match
@@ -195,7 +195,7 @@ def describe_vocabulary() -> list[dict]:
          "example": "open Chrome  ·  open C:\\Projects  ·  open example.com",
          "does": "launches an approved app, folder or URL"},
         {"verb": "Search", "phrases": list(_SEARCH),
-         "example": "search for supplier invoices",
+         "example": "search for quarterly report",
          "does": "opens a web search in your browser"},
         {"verb": "Type", "phrases": list(_TYPE),
          "example": "type this is the message",

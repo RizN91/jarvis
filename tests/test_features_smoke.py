@@ -153,7 +153,7 @@ def main() -> int:
                f"tool={opened[0] if opened else None}")
 
         opened.clear()
-        res2 = D.DictationResult(True, text="search for supplier invoices",
+        res2 = D.DictationResult(True, text="search for quarterly report",
                                  engine="economy")
         app.dictation._run_spoken_command(res2)
         record("“search for …” opens a web search",
@@ -170,7 +170,7 @@ def main() -> int:
                f"text={res3.text!r} tools_called={opened}")
 
         opened.clear()
-        res4 = D.DictationResult(True, text="opening the supplier invoices document",
+        res4 = D.DictationResult(True, text="opening the quarterly report document",
                                  engine="economy")
         handled4 = app.dictation._run_spoken_command(res4)
         record("an ordinary sentence is dictated, never executed",
@@ -203,7 +203,7 @@ def main() -> int:
 
     # ---------------------------------------------------------- 4. the island
     st_idle = ov.PillState(state="sleeping")
-    st_talk = ov.PillState(state="dictating", transcript="open my supplier invoices file")
+    st_talk = ov.PillState(state="dictating", transcript="open my quarterly report file")
     st_work = ov.PillState(state="working", detail="Opening the quarterly report",
                            actions=["Opening the quarterly report"])
 
@@ -245,7 +245,7 @@ def main() -> int:
            str(made.cfg.get("voice")) == "quartz", f"{made.cfg.get('voice')!r}")
 
     # ----------------------------------------------------------- 6. history
-    for text in ("open my supplier invoices documents and summarise the latest file",
+    for text in ("open my quarterly report documents and summarise the latest file",
                  "review the Supabase connection", "type the invoice is ready"):
         db().add_turn("user", text, meta={"engine": "economy", "inserted": True})
     h = api.get_history()

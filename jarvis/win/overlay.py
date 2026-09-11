@@ -537,7 +537,7 @@ class PillState:
     # the orb animation and the status word, so the two are never confused.
     speaking: bool = False
     # A named job on the LEFT of the island, with its own progress bar - the
-    # "Opening Supplier Invoices" row in the mockup. Distinct from `transcript`,
+    # "Opening Quarterly Report" row in the mockup. Distinct from `transcript`,
     # which is what the user said, and from `detail`, which is the status
     # sub-line on the right.
     task: str = ""
@@ -1158,7 +1158,7 @@ class Overlay:
                         cy: float, width: float, appear: float) -> None:
         """The left wing carries ONE of three things, never a mixture:
 
-          * a named job with a progress bar  ("Opening Supplier Invoices")
+          * a named job with a progress bar  ("Opening Quarterly Report")
           * a headline with a sub-line       ("Error / Something went wrong")
           * what the user said, quoted, on one line
 
