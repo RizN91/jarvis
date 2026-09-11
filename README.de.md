@@ -25,11 +25,82 @@ Kein Abo. Bring deinen eigenen OpenAI-Schlüssel mit. **Ab $0.0045 pro Minute.**
 
 ---
 
+## Installation
+
+**Windows 10 oder 11.** Eine einzige Zeile in PowerShell ist die ganze Installation:
+
+```powershell
+irm https://raw.githubusercontent.com/RizN91/jarvis/main/install.ps1 | iex
+```
+
+Es findet dein Python, klont Jarvis nach `%LOCALAPPDATA%\Jarvis\app`, legt die virtuelle Umgebung an, installiert die festgeschriebenen Abhängigkeiten, führt einen Smoke-Check aus und fügt eine Startmenü-Verknüpfung hinzu.
+
+Es ist pro Benutzer und umkehrbar: Es erhöht nie die Rechte, installiert Python nie für dich und ändert weder deine Ausführungsrichtlinie noch deine Defender-Einstellungen noch dein globales Python. `-DryRun` zeigt genau, was es tun würde, und ändert nichts; `-Uninstall` entfernt es wieder und rührt deinen Datenordner nicht ohne eine getippte Bestätigung an.
+
+Beim ersten Start öffnet sich ein Einrichtungsassistent — Mikrofon, Lautsprecher, Tastenkürzel, Weckwort und Budget — und fragt nach deinem OpenAI-API-Schlüssel, der direkt in die **Windows-Anmeldeinformationsverwaltung** geht und nie in eine Datei.
+
+Es wird nichts irgendwohin gesendet, bis du den Assistenten abschließt und mit dem Diktieren beginnst — außer den Verbindungstests, die du ausdrücklich startest.
+
+<details>
+<summary>Oder von Hand installieren</summary>
+
+```bat
+git clone https://github.com/RizN91/jarvis.git
+cd jarvis
+setup.cmd
+run.cmd
+```
+
+Oder direkt aus dem Quellbaum:
+
+```bat
+py -3.11 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m jarvis
+```
+
+macOS und Linux werden noch nicht unterstützt. `install.sh` sagt das, statt es vorzutäuschen, und [Plattformunterstützung](#plattformunterstützung) erklärt warum.
+
+</details>
+
+## Zwei Wege, es zu starten
+
+Du musst nie irgendetwas anklicken.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Sag „Hey Jarvis"**
+
+Schalte das Weckwort ein und leg einfach los. Es wird **auf deinem Rechner** von einem kleinen lokalen Modell erkannt, also verlässt **während des Zuhörens auf die Phrase überhaupt kein Audio deinen Computer**. „Hey GPT" funktioniert ebenfalls, und du kannst deine eigene Phrase festlegen.
+
+</td>
+<td width="50%" valign="top">
+
+**Oder halt eine Taste**
+
+Standardmäßig ist das die **Seitentaste** deiner Maus (XButton2): halten, sprechen, loslassen — die Worte stehen schon am Cursor. Lieber die Tastatur? Tippe **F8**.
+
+</td>
+</tr>
+</table>
+
+| Du drückst | Was passiert |
+| --- | --- |
+| **Seitentaste** der Maus (halten) | Diktiert in die App, die gerade den Fokus hat |
+| `F8` | Startet und stoppt das Diktieren, freihändig |
+| `Ctrl` + `Alt` + `Space` | Öffnet ein Sprachgespräch |
+| `Ctrl` + `Alt` + `Pause` | Not-Aus — beendet die Sitzung und jedes laufende Tool |
+| `Esc` | Bricht ab, was gerade passiert |
+
+Jede davon lässt sich im Einrichtungsassistenten neu belegen — auf eine andere Taste, eine andere Maustaste oder gar nichts.
+
 ## Sieh es in Aktion
 
 [![Jarvis demo](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
 
-**▶ Die 81-Sekunden-Demo mit Ton ansehen** · 1080p, 11 MB
+**▶ Die 88-Sekunden-Demo mit Ton ansehen** · 1080p, 12 MB
 
 ---
 
@@ -95,41 +166,6 @@ und Schlüssel, bevor du dich auf sie verlässt.</sub>
 übersetzt — siehe unten.</sub>
 
 </div>
-
-## Installation
-
-**Windows 10 oder 11.** Du brauchst Python 3.11+ und einen OpenAI-API-Schlüssel.
-
-```bat
-git clone https://github.com/RizN91/jarvis.git
-cd jarvis
-setup.cmd
-```
-
-`setup.cmd` sucht ein passendes Python, legt eine virtuelle Umgebung an,
-installiert die festgeschriebenen Abhängigkeiten und führt einen Smoke-Check
-aus. Danach:
-
-```bat
-run.cmd
-```
-
-Beim ersten Start öffnet sich der Einrichtungsassistent. Er führt dich durch
-Mikrofon, Lautsprecher, Tastenkürzel, Weckwort und Budget und fragt nach deinem
-API-Schlüssel — der in der **Windows-Anmeldeinformationsverwaltung** liegt, nie in
-einer Datei.
-
-Es wird nichts irgendwohin gesendet, bis du den Assistenten abschließt und mit
-dem Diktieren beginnst — außer den Verbindungstests, die du ausdrücklich
-startest.
-
-Lieber von Hand?
-
-```bat
-py -3.11 -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-.venv\Scripts\python.exe -m jarvis
-```
 
 ## Was es kostet
 

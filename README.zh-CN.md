@@ -24,11 +24,82 @@
 
 ---
 
+## 安装
+
+**Windows 10 或 11。** 在 PowerShell 里运行一行命令就完成了整个安装：
+
+```powershell
+irm https://raw.githubusercontent.com/RizN91/jarvis/main/install.ps1 | iex
+```
+
+它会找到你的 Python，把 Jarvis 克隆到 `%LOCALAPPDATA%\Jarvis\app`，创建虚拟环境，安装锁定版本的依赖，运行一次冒烟检查，并在开始菜单中添加一个快捷方式。
+
+它按用户安装，且可以撤销：绝不提权，绝不替你安装 Python，也绝不修改你的执行策略、Defender 设置或全局 Python。`-DryRun` 会准确显示它将做什么，不做任何更改；`-Uninstall` 可以再次移除它，未经手动输入确认不会碰你的数据文件夹。
+
+首次启动会打开设置向导——麦克风、扬声器、快捷键、唤醒词和预算——并询问你的 OpenAI API 密钥，密钥直接存入 **Windows 凭据管理器**，绝不写入文件。
+
+在你完成向导并开始听写之前，不会向任何地方发送数据，除非是你主动运行的连接测试。
+
+<details>
+<summary>或手动安装</summary>
+
+```bat
+git clone https://github.com/RizN91/jarvis.git
+cd jarvis
+setup.cmd
+run.cmd
+```
+
+或者直接从源码树安装：
+
+```bat
+py -3.11 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m jarvis
+```
+
+macOS 和 Linux 尚不支持。`install.sh` 会如实说明，而不是假装可以，[平台支持](#平台支持) 解释了原因。
+
+</details>
+
+## 两种启动方式
+
+你完全不用点任何东西。
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**说“Hey Jarvis”**
+
+打开唤醒词，直接开口说话就行。它由一个小型本地模型**在你的电脑上**检测，所以在聆听这句话期间，**不会有任何音频离开你的电脑**。“Hey GPT”也可以，你还能自定义短语。
+
+</td>
+<td width="50%" valign="top">
+
+**或者按住一个键**
+
+默认是你的鼠标**侧键**（XButton2）：按住、说话、松开——文字已经出现在光标处。更喜欢键盘？轻按 **F8**。
+
+</td>
+</tr>
+</table>
+
+| 你按 | 会发生什么 |
+| --- | --- |
+| 鼠标**侧键**（按住） | 向当前获得焦点的应用听写 |
+| `F8` | 开始和停止听写，无需按住不放 |
+| `Ctrl` + `Alt` + `Space` | 开启一段语音对话 |
+| `Ctrl` + `Alt` + `Pause` | 紧急停止——结束会话和任何正在运行的工具 |
+| `Esc` | 取消当前正在发生的操作 |
+
+它们每一个都可以在设置向导中重新绑定——换成别的键、别的鼠标按键，或者不绑定。
+
 ## 观看演示
 
 [![Jarvis demo](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
 
-**▶ 观看 81 秒带声音的演示** · 1080p, 11 MB
+**▶ 观看 88 秒带声音的演示** · 1080p, 12 MB
 
 ---
 
@@ -87,37 +158,6 @@ Jarvis 把这两半都做了，只花几分钱，而且不碍事。它没有
 <sub>每个界面都有浅色主题，整个 UI 也都已翻译——见下文。</sub>
 
 </div>
-
-## 安装
-
-**Windows 10 或 11。** 你需要 Python 3.11+ 和一个 OpenAI API 密钥。
-
-```bat
-git clone https://github.com/RizN91/jarvis.git
-cd jarvis
-setup.cmd
-```
-
-`setup.cmd` 会找到合适的 Python，创建虚拟环境，安装锁定版本的依赖，并运行
-一次冒烟检查。然后：
-
-```bat
-run.cmd
-```
-
-首次启动会打开设置向导。它会带你逐一确认麦克风、扬声器、快捷键、唤醒词和
-预算，并询问你的 API 密钥——密钥保存在 **Windows 凭据管理器**中，绝不写入文件。
-
-在你完成向导并开始听写之前，不会向任何地方发送数据，除非是你主动运行的
-连接测试。
-
-想手动安装？
-
-```bat
-py -3.11 -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-.venv\Scripts\python.exe -m jarvis
-```
 
 ## 费用
 

@@ -25,11 +25,82 @@ Sin suscripción. Usa tu propia clave de OpenAI. **Desde $0.0045 por minuto.**
 
 ---
 
+## Instalación
+
+**Windows 10 u 11.** Una sola línea en PowerShell es toda la instalación:
+
+```powershell
+irm https://raw.githubusercontent.com/RizN91/jarvis/main/install.ps1 | iex
+```
+
+Busca tu Python, clona Jarvis en `%LOCALAPPDATA%\Jarvis\app`, crea el entorno virtual, instala las dependencias fijadas, ejecuta una comprobación rápida y añade un acceso directo en el menú Inicio.
+
+Es por usuario y reversible: nunca eleva privilegios, nunca instala Python por ti y nunca cambia tu directiva de ejecución, tu configuración de Defender ni tu Python global. `-DryRun` muestra exactamente lo que haría y no cambia nada; `-Uninstall` lo elimina otra vez, y no tocará tu carpeta de datos sin una confirmación escrita.
+
+El primer arranque abre un asistente de configuración —micrófono, altavoces, atajos, palabra de activación y presupuesto— y te pide tu clave de API de OpenAI, que va directamente al **Administrador de credenciales de Windows** y nunca a un archivo.
+
+No se envía nada a ningún sitio hasta que termines el asistente y empieces a dictar, salvo las pruebas de conexión que decidas ejecutar tú.
+
+<details>
+<summary>O instalar a mano</summary>
+
+```bat
+git clone https://github.com/RizN91/jarvis.git
+cd jarvis
+setup.cmd
+run.cmd
+```
+
+O directamente desde el árbol de código fuente:
+
+```bat
+py -3.11 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m jarvis
+```
+
+macOS y Linux aún no son compatibles. `install.sh` lo dice en lugar de disimular, y [Compatibilidad de plataformas](#compatibilidad-de-plataformas) explica por qué.
+
+</details>
+
+## Dos formas de iniciarlo
+
+No tienes que hacer clic en nada.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Di «Hey Jarvis»**
+
+Activa la palabra de activación y empieza a hablar sin más. Se detecta **en tu máquina** con un modelo local pequeño, así que mientras escucha la frase **no sale ningún audio de tu ordenador**. «Hey GPT» también funciona, y puedes definir tu propia frase.
+
+</td>
+<td width="50%" valign="top">
+
+**O mantén un botón**
+
+Lo predeterminado es el **botón lateral** de tu ratón (XButton2): mantenlo pulsado, habla y suéltalo: las palabras ya están en tu cursor. ¿Prefieres el teclado? Pulsa **F8**.
+
+</td>
+</tr>
+</table>
+
+| Pulsas | Qué ocurre |
+| --- | --- |
+| **Botón lateral** del ratón (mantener) | Dicta en la aplicación que tenga el foco |
+| `F8` | Inicia y detiene el dictado, con las manos libres |
+| `Ctrl` + `Alt` + `Space` | Abre una conversación de voz |
+| `Ctrl` + `Alt` + `Pause` | Parada de emergencia: termina la sesión y cualquier herramienta en curso |
+| `Esc` | Cancela lo que esté ocurriendo en este momento |
+
+Todos ellos se pueden reasignar en el asistente de configuración —a otra tecla, a otro botón del ratón o a nada.
+
 ## Míralo funcionar
 
 [![Jarvis demo](docs/media/jarvis-preview.webp)](docs/media/jarvis-demo.mp4)
 
-**▶ Ver la demo de 81 segundos con sonido** · 1080p, 11 MB
+**▶ Ver la demo de 88 segundos con sonido** · 1080p, 12 MB
 
 ---
 
@@ -92,39 +163,6 @@ altavoces, tus atajos y tu clave antes de que dependas de él.</sub>
 mira más abajo.</sub>
 
 </div>
-
-## Instalación
-
-**Windows 10 u 11.** Necesitas Python 3.11+ y una clave de API de OpenAI.
-
-```bat
-git clone https://github.com/RizN91/jarvis.git
-cd jarvis
-setup.cmd
-```
-
-`setup.cmd` busca un Python adecuado, crea un entorno virtual, instala las
-dependencias fijadas y ejecuta una comprobación rápida. Después:
-
-```bat
-run.cmd
-```
-
-El primer arranque abre el asistente de configuración. Te guía por el
-micrófono, los altavoces, los atajos, la palabra de activación y el
-presupuesto, y te pide tu clave de API, que se guarda en el **Administrador de
-credenciales de Windows**, nunca en un archivo.
-
-No se envía nada a ningún sitio hasta que termines el asistente y empieces a
-dictar, salvo las pruebas de conexión que decidas ejecutar tú.
-
-¿Prefieres hacerlo a mano?
-
-```bat
-py -3.11 -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-.venv\Scripts\python.exe -m jarvis
-```
 
 ## Lo que cuesta
 
