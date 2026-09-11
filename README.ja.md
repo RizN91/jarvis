@@ -251,7 +251,7 @@ Jarvis 自身のカウンターです — OpenAI アカウントの予算を読�
 
 ## ライセンス
 
-[MIT](LICENSE) — 好きなように使ってください。
+[MIT](LICENSE) Dependency and model licences: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). — 好きなように使ってください。
 
 Jarvis は OpenAI と提携しておらず、OpenAI による承認やスポンサードも受けていません。
 API キーはご自身で用意し、その利用はご自身の責任で行ってください。

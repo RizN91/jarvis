@@ -231,7 +231,7 @@ WTS。正是这些让它用起来像原生应用，也正是它暂时无法移�
 
 ## 许可证
 
-[MIT](LICENSE)——随你怎么用。
+[MIT](LICENSE) Dependency and model licences: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).——随你怎么用。
 
 Jarvis 与 OpenAI 没有关联，也未获其认可或赞助。你需要自备 API 密钥，并对自己的
 使用负责。

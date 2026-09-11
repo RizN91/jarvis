@@ -265,7 +265,7 @@ quieres ayudar.
 
 ## Licencia
 
-[MIT](LICENSE): haz lo que quieras con él.
+[MIT](LICENSE) Dependency and model licences: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).: haz lo que quieras con él.
 
 Jarvis no está afiliado a OpenAI, ni cuenta con su respaldo ni su patrocinio. Tú
 aportas tu propia clave de API y eres responsable de su uso.

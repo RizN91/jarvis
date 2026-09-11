@@ -271,6 +271,11 @@ applications rather than mocks. There is a lot to build if you want to help.
 
 [MIT](LICENSE) — do what you like with it.
 
+Dependency and model licences are listed in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), including one honest caveat
+about the wake-word model's terms that is worth reading before any commercial
+use.
+
 Jarvis is not affiliated with, endorsed by, or sponsored by OpenAI. You supply
 your own API key and are responsible for your usage.
 

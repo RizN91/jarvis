@@ -19,22 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-## Third-party components
-
-Jarvis itself is MIT. It depends on other people's work, which keeps its own
-licence:
-
-| Component | Licence | Notes |
-| --- | --- | --- |
-| OpenAI Python SDK, `websockets`, `numpy`, `sounddevice`, `pillow`, `pywebview` | MIT / BSD | permissive, no obligations beyond attribution |
-| `pystray` | LGPL-3.0 | used unmodified as a library |
-| `sherpa-onnx` | Apache-2.0 | local wake-word engine |
-| Wake-word model (`sherpa-onnx-kws-zipformer-gigaspeech-3.3M`) | Apache-2.0 declared | **the tarball ships no LICENSE file, and the GigaSpeech audio corpus carries non-commercial research terms** — read the model's own terms before any commercial redistribution of that model |
-| OpenAI API | commercial terms | you bring your own key and pay OpenAI directly |
-
-The **vendored OpenAI documentation** used to verify the API contract is NOT
-redistributed in this repository; see `docs/OPENAI-API-NOTES.md` for what was
-checked and links to the source pages.

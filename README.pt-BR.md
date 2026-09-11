@@ -258,7 +258,7 @@ aplicativos reais em vez de mocks. Há muito o que construir se você quiser aju
 
 ## Licença
 
-[MIT](LICENSE) — faça o que quiser com ele.
+[MIT](LICENSE) Dependency and model licences: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). — faça o que quiser com ele.
 
 O Jarvis não é afiliado, endossado nem patrocinado pela OpenAI. Você fornece sua
 própria chave de API e é responsável pelo seu uso.
