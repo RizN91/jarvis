@@ -1,0 +1,12 @@
+# Source-distribution contents. The wheel gets the settings web assets via
+# [tool.setuptools.package-data] in pyproject.toml; this keeps the sdist honest
+# and complete too.
+include README.md
+include AGENTS.md
+include requirements.txt
+include requirements.lock.txt
+recursive-include jarvis/ui/web *
+recursive-include docs *.md
+recursive-include installer *.spec
+global-exclude *.py[cod]
+global-exclude __pycache__/*

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or setup help
+    url: https://github.com/RizN91/jarvis/discussions
+    about: Ask anything — setup trouble, "how do I…", or show what you built.
+  - name: Security vulnerability
+    url: https://github.com/RizN91/jarvis/security/advisories/new
+    about: Please report security issues privately, never in a public issue.
+  - name: Read the docs first
+    url: https://github.com/RizN91/jarvis#readme
+    about: Install steps, costs, platform support and the roadmap are all in the README.

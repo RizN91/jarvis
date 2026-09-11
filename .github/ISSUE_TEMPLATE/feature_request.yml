@@ -1,0 +1,47 @@
+name: Feature request
+description: Suggest an idea, a language, a theme, or a new spoken command
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are genuinely welcome — the roadmap follows what people ask for.
+        Small, specific requests are the easiest to say yes to.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the problem, not the solution. What is annoying today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to happen?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area?
+      multiple: true
+      options:
+        - Dictation accuracy
+        - Assistant capability
+        - Another AI model (Claude, Gemini, local)
+        - Voices
+        - Themes / appearance
+        - A new spoken command
+        - A new language
+        - macOS / Linux support
+        - Performance
+        - Documentation
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to build it?
+      options:
+        - label: I would be willing to open a pull request for this
+        - label: I am offering to help translate a language

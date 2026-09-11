@@ -1,0 +1,66 @@
+# ---------------------------------------------------------------- secrets
+# NEVER commit real credentials. Jarvis stores the API key in Windows
+# Credential Manager (DPAPI-wrapped) at runtime, so no key file is ever needed.
+.env
+.env.*
+!.env.example
+api.env
+*.key
+*.pem
+*.p12
+*.pfx
+secrets.local.*
+
+# ---------------------------------------------------------------- runtime data
+# Created under %LOCALAPPDATA%\Jarvis at runtime. Also honoured via BV_DATA_DIR.
+config.json
+*.db
+*.db-journal
+*.db-wal
+logs/
+quit.request
+
+# ---------------------------------------------------------------- python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------------------------------------------------------------- local dev / internal notes
+# These are working notes for the maintainers, not part of the product.
+# Kept on disk, deliberately not published.
+HANDOFF.md
+CODEX_AUDIT.md
+AGENTS.md
+docs/TEST_RESULTS_raw.txt
+docs/TEST_RESULTS.md
+docs/wake_tests/
+docs/_vendor/
+_scratch/
+*.local.md
+
+# ---------------------------------------------------------------- generated test artefacts
+# Screenshots the test harness regenerates on every run. The curated set that
+# IS published lives in docs/images/.
+docs/codex/
+docs/overlay/
+
+# ---------------------------------------------------------------- os / editor noise
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/

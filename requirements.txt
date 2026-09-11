@@ -1,0 +1,47 @@
+# Jarvis — direct dependencies.
+#
+# These are the packages the application ACTUALLY imports, verified by grepping
+# every third-party import in jarvis/. Transitive dependencies are not
+# listed; see requirements.lock.txt for the exact resolved set this build was
+# validated against.
+#
+# The ">=" floors are the versions installed and exercised on 2026-09-11
+# (Windows 11 x64, Python 3.11.16). Floors, not pins.
+#
+# Install:   python -m pip install -r requirements.txt
+# Exact:     python -m pip install -r requirements.lock.txt
+# Or just:   setup.cmd        (creates .venv and installs the lockfile)
+#
+# DELIBERATELY ABSENT, and why — do not re-add these without a real caller:
+#   pywin32, comtypes
+#     The whole Windows layer (win/target.py, insert.py, hotkeys.py, session.py,
+#     overlay.py) is written against plain `ctypes` + ctypes.wintypes. Neither
+#     package is imported anywhere. They were listed in an earlier draft of this
+#     file on the assumption that COM bindings would be needed; they were not.
+#     docs/DEPENDENCIES.md flags them as unused.
+#   httpx
+#     Installed as a transitive dependency of `openai` and required at runtime by
+#     it, but this app never imports it directly, so it is pinned in the lockfile
+#     rather than declared here.
+#
+# Note on pythonnet: it is not imported by app code, but pywebview REQUIRES it on
+# Windows to drive the WebView2 (EdgeChromium) backend. It is a genuine direct
+# requirement and is listed as such.
+
+# ---- speech engines -------------------------------------------------------
+openai>=2.24            # Responses API (backend model, text cleanup)
+websockets>=15.0        # gpt-live-1 Live session transport (raw protocol)
+
+# ---- audio ----------------------------------------------------------------
+sounddevice>=0.5.5      # WASAPI capture + playback (PortAudio is bundled)
+numpy>=2.4              # PCM buffers, resampling, VAD maths
+sentencepiece>=0.2.2    # BPE tokeniser required by sherpa-onnx KWS models
+sherpa-onnx>=1.13.4     # offline wake word (kws-zipformer-gigaspeech-3.3M)
+
+# ---- Windows integration --------------------------------------------------
+pillow>=12.3            # overlay pill + tray icon rasterisation
+
+# ---- tray + settings UI ---------------------------------------------------
+pystray>=0.19.5         # system tray icon  (LGPLv3 — see docs/DEPENDENCIES.md)
+pywebview>=6.2          # WebView2 host for the settings window
+pythonnet>=3.1          # required by pywebview on Windows (edgechromium GUI)

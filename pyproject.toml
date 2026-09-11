@@ -1,0 +1,68 @@
+# Packaging for Jarvis.
+#
+# The distribution (PyPI-style) name is ``jarvis-voice``; the import package is
+# ``jarvis``. Install it into a venv with:
+#
+#     python -m pip install .
+#
+# NOTE: this installs the Python package and the settings-web assets. The app
+# itself is WINDOWS-ONLY (see docs/INSTALL.md "Platform support").
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jarvis-voice"
+version = "1.0.0"
+description = "Windows-only dictation and GPT-Live voice assistant tray app."
+readme = "README.md"
+requires-python = ">=3.11"
+# No personal author identity: this project is open source.
+classifiers = [
+    "Environment :: Win32 (MS Windows)",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+
+# Direct runtime dependencies, mirroring requirements.txt (the ``>=`` floors,
+# not the exact lockfile pins). Keep the two in step.
+dependencies = [
+    "openai>=2.24",        # Responses API (backend model, text cleanup)
+    "websockets>=15.0",    # gpt-live-1 Live session transport
+    "sounddevice>=0.5.5",  # WASAPI capture + playback
+    "numpy>=2.4",          # PCM buffers, resampling, VAD maths
+    "sentencepiece>=0.2.2",  # BPE tokeniser for sherpa-onnx KWS models
+    "sherpa-onnx>=1.13.4",   # offline wake word
+    "pillow>=12.3",        # overlay pill + tray icon rasterisation
+    "pystray>=0.19.5",     # system tray icon
+    "pywebview>=6.2",      # WebView2 host for the settings window
+    "pythonnet>=3.1",      # required by pywebview on Windows
+]
+
+[project.urls]
+Repository = "https://github.com/RizN91/jarvis-voice"
+
+# Console entry point: `jarvis` starts the tray app.
+[project.scripts]
+jarvis = "jarvis.__main__:main"
+
+# Windowed (no console) entry point for a shortcut / Start-menu launch.
+[project.gui-scripts]
+jarvis-tray = "jarvis.__main__:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["jarvis*"]
+
+# The WebView2 settings UI is data, not code. It lives under the ``jarvis.ui``
+# package as ``ui/web`` (no __init__.py of its own), and MUST ship in the wheel
+# or the settings window fails to load. jarvis.ui.window.web_root() resolves
+# this directory at runtime.
+[tool.setuptools.package-data]
+"jarvis.ui" = ["web/*"]

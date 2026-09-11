@@ -1,0 +1,95 @@
+name: Bug report
+description: Something is broken or does not do what the docs say
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. The details below are what usually make a bug
+        reproducible on the first try.
+
+        **Do not paste your API key** — or anything key-shaped — into this issue.
+        Jarvis never needs it in a bug report, and anything looking like `sk-…`
+        will be edited out.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what actually happened.
+      placeholder: |
+        I held the mouse side button and said a sentence. I expected it in Notepad.
+        Instead the pill said "held for review" and nothing was typed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Focus Notepad
+        2. Hold the side button
+        3. Say "hello world"
+        4. Release
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Which part?
+      multiple: true
+      options:
+        - Dictation
+        - Voice assistant
+        - The floating pill
+        - Settings / setup wizard
+        - Wake word
+        - Spoken commands
+        - Installation / setup.cmd
+        - Something else
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `run-console.cmd --version`, or the release you installed.
+      placeholder: "Jarvis 1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 23H2 (build 22631)"
+    validations:
+      required: true
+
+  - type: input
+    id: audio
+    attributes:
+      label: Microphone and speakers
+      description: Helpful when the problem is audio-related.
+      placeholder: "Realtek onboard array / USB headset"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log tail
+      description: |
+        From `%LOCALAPPDATA%\Jarvis\logs\jarvis.log` — the last ~30 lines are
+        usually enough. **Check it for anything private before pasting**; the log
+        redacts keys but not the names of your documents.
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for the same problem
+          required: true
+        - label: I am on the latest release
+          required: false

@@ -1,0 +1,23 @@
+# Normalise line endings so a Windows checkout and a Linux CI agree.
+# The repo has had mixed LF/CRLF churn; this prevents it coming back.
+* text=auto eol=lf
+
+# Windows batch files must be CRLF or cmd.exe mis-parses them.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Never touch these.
+*.png binary
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wav binary
+*.mp3 binary
+*.onnx binary
+*.db binary
+
+# Generated / vendored — collapse in diffs.
+*.lock.txt linguist-generated
+*.min.js linguist-generated

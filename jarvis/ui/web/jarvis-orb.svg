@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+ <defs>
+  <radialGradient id="body" cx=".36" cy=".17" r=".86"><stop stop-color="#2762a7"/><stop offset=".24" stop-color="#0b294f"/><stop offset=".58" stop-color="#051426"/><stop offset=".85" stop-color="#103a75"/><stop offset="1" stop-color="#69bcff"/></radialGradient>
+  <linearGradient id="rim" x2=".25" y2="1"><stop stop-color="#e1faff"/><stop offset=".23" stop-color="#73c6ff"/><stop offset=".6" stop-color="#2673bc"/><stop offset="1" stop-color="#a8dbff"/></linearGradient>
+  <linearGradient id="ribbon" x2=".3" y2="1"><stop stop-color="#53a8ff" stop-opacity=".08"/><stop offset=".68" stop-color="#276dee" stop-opacity=".48"/><stop offset="1" stop-color="#8bcfff" stop-opacity=".1"/></linearGradient>
+  <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="8"/></filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="grain"><feTurbulence baseFrequency=".75" numOctaves="3" seed="12"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".11"/></feComponentTransfer></filter>
+  <clipPath id="disc"><circle cx="120" cy="120" r="93"/></clipPath>
+ </defs>
+ <circle cx="120" cy="120" r="94" fill="none" stroke="#238cff" stroke-width="12" opacity=".46" filter="url(#glow)"/>
+ <circle cx="120" cy="120" r="93" fill="url(#body)" stroke="url(#rim)" stroke-width="1.8"/>
+ <g clip-path="url(#disc)">
+  <path d="M19 106C83 43 137 210 213 114L224 145C151 251 90 83 19 135Z" fill="url(#ribbon)"/>
+  <path d="M20 111C83 52 143 205 216 120" fill="none" stroke="#48a0ff" stroke-width="5" opacity=".48" filter="url(#soft)"/>
+  <path d="M20 109C83 50 143 203 216 118" fill="none" stroke="#8bccff" stroke-width=".9" opacity=".8"/>
+  <rect x="27" y="27" width="186" height="186" filter="url(#grain)" opacity=".5"/>
+  <ellipse cx="101" cy="34" rx="45" ry="4" fill="#a4dcff" opacity=".65" filter="url(#soft)"/>
+ </g>
+</svg>

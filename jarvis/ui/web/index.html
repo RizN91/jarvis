@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <title>Jarvis — Settings &amp; Setup</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#view" data-i18n="Skip to content">Skip to content</a>
+
+  <!-- ── Connecting / boot state ─────────────────────────────────────── -->
+  <div class="boot" id="boot" role="status" aria-live="polite">
+    <div class="orb orb-xl" aria-hidden="true">
+      <span class="orb-ring"></span>
+      <span class="wave wave-orb">
+        <i class="bar" style="--i:0"></i><i class="bar" style="--i:1"></i><i class="bar" style="--i:2"></i>
+        <i class="bar" style="--i:3"></i><i class="bar" style="--i:4"></i><i class="bar" style="--i:5"></i>
+        <i class="bar" style="--i:6"></i><i class="bar" style="--i:7"></i><i class="bar" style="--i:8"></i>
+      </span>
+    </div>
+    <p class="boot-title">Jarvis</p>
+    <p class="boot-sub" id="bootSub" data-i18n="Connecting to the app\u2026">Connecting to the app…</p>
+    <div class="boot-bar" aria-hidden="true"><i></i></div>
+  </div>
+
+  <!-- ── App shell ───────────────────────────────────────────────────── -->
+  <div class="app" id="app" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <div class="orb" aria-hidden="true">
+          <span class="orb-ring"></span>
+          <span class="wave wave-orb wave-sm">
+            <i class="bar" style="--i:0"></i><i class="bar" style="--i:1"></i><i class="bar" style="--i:2"></i>
+            <i class="bar" style="--i:3"></i><i class="bar" style="--i:4"></i>
+          </span>
+        </div>
+        <div class="brand-txt">
+          <h1>Jarvis</h1>
+          <p id="brandSub" data-i18n="Your AI. On your terms.">Your AI. On your terms.</p>
+        </div>
+      </div>
+
+      <!-- The live status sits in the MIDDLE of the bar, on its own, so it
+           reads as the app talking to you rather than as another control. -->
+      <div class="topbar-mid">
+        <div class="pill" id="statusPill" data-state="sleeping" role="status" aria-live="polite">
+          <span class="wave wave-pill" aria-hidden="true">
+            <i class="bar" style="--i:0"></i><i class="bar" style="--i:1"></i><i class="bar" style="--i:2"></i>
+            <i class="bar" style="--i:3"></i><i class="bar" style="--i:4"></i><i class="bar" style="--i:5"></i>
+          </span>
+          <span class="pill-label" id="statusLabel" data-i18n="Ready when you are.">Ready when you are.</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <span class="saveflag" id="saveflag" role="status" aria-live="polite" data-i18n="Saved">Saved</span>
+        <button type="button" class="icon-btn" data-act="theme" data-i18n-aria="Switch colour theme" aria-label="Switch colour theme" title="Switch colour theme">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.2"></circle>
+            <path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M6.2 6.2 4.6 4.6M19.4 19.4l-1.6-1.6M17.8 6.2l1.6-1.6M4.6 19.4l1.6-1.6"></path>
+          </svg>
+        </button>
+        <button type="button" class="icon-btn" data-act="open-settings" data-i18n-aria="All settings" aria-label="All settings" title="All settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2"></circle>
+            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v0a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"></path>
+          </svg>
+        </button>
+        <button type="button" class="avatar" data-act="quit" data-i18n-aria="Quit Jarvis" aria-label="Quit Jarvis" title="Quit Jarvis">J</button>
+      </div>
+    </header>
+
+    <div class="body">
+      <nav class="sidebar" data-i18n-aria="Sections" aria-label="Sections">
+        <p class="side-head" id="sideHead" data-i18n="Setup">Setup</p>
+        <div class="nav-list" id="navList"></div>
+        <div class="side-foot">
+          <div class="side-status" id="sideStatus">
+            <div class="wave wave-live" id="sideWave" aria-hidden="true">
+              <i class="bar" style="--i:0"></i><i class="bar" style="--i:1"></i><i class="bar" style="--i:2"></i>
+              <i class="bar" style="--i:3"></i><i class="bar" style="--i:4"></i><i class="bar" style="--i:5"></i>
+              <i class="bar" style="--i:6"></i><i class="bar" style="--i:7"></i><i class="bar" style="--i:8"></i>
+              <i class="bar" style="--i:9"></i><i class="bar" style="--i:10"></i><i class="bar" style="--i:11"></i>
+            </div>
+            <p class="side-state" id="sideState" data-i18n="Jarvis is sleeping">Jarvis is sleeping</p>
+            <p class="side-detail" id="sideDetail" data-i18n="Say your wake word to start">Say your wake word to start</p>
+            <button type="button" class="btn sm block" data-act="smoke-test">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+                <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"></path>
+              </svg>
+              <span data-i18n="Try a smoke test">Try a smoke test</span>
+            </button>
+          </div>
+          <div class="side-meta">
+            <span id="sideVersion">v—</span>
+            <button type="button" class="link-btn" data-act="wizard-restart" data-i18n="Re-run setup">Re-run setup</button>
+          </div>
+        </div>
+      </nav>
+      <main class="content" id="view" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <!-- ── Shortcut capture dialog ─────────────────────────────────────── -->
+  <div class="modal" id="recorder" hidden role="dialog" aria-modal="true" aria-labelledby="recTitle">
+    <div class="modal-card">
+      <div class="wave wave-lg" aria-hidden="true">
+        <i class="bar" style="--i:0"></i><i class="bar" style="--i:1"></i><i class="bar" style="--i:2"></i>
+        <i class="bar" style="--i:3"></i><i class="bar" style="--i:4"></i><i class="bar" style="--i:5"></i>
+        <i class="bar" style="--i:6"></i>
+      </div>
+      <h2 id="recTitle" data-i18n="Listening for a shortcut">Listening for a shortcut</h2>
+      <p id="recDesc" data-i18n="Press the key combination or mouse button you want to use.">Press the key combination or mouse button you want to use.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-act="rec-cancel" data-i18n="Cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <div class="sr-only" id="live" role="status" aria-live="polite"></div>
+
+  <script src="locales.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
